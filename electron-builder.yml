@@ -1,0 +1,38 @@
+appId: com.djcheck.app
+productName: DJCheck
+copyright: "Copyright © 2026 DJCheck Contributors"
+
+directories:
+  output: dist
+  buildResources: build
+
+files:
+  - out/**/*
+
+# ffmpeg-static and music-metadata must be unpacked from asar to be executable
+asarUnpack:
+  - "node_modules/ffmpeg-static/**"
+  - "node_modules/music-metadata/**"
+
+mac:
+  target:
+    - target: dmg
+      arch: [x64, arm64]
+  category: public.app-category.music
+  hardenedRuntime: true
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.plist
+  gatekeeperAssess: false
+
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+
+linux:
+  target:
+    - target: AppImage
+      arch: [x64]
+  category: Audio
+
+publish: null

@@ -1,0 +1,3 @@
+[submodule "Resources/WavPatcher"]
+	path = Resources/WavPatcher
+	url = https://github.com/camm9909/WavPatcher.git

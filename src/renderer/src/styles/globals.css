@@ -1,0 +1,193 @@
+@import "tailwindcss";
+
+/* ─── Fonts ──────────────────────────────────────────────────────────────────── */
+@font-face {
+  font-family: 'Cal Sans';
+  src: url('https://cdn.jsdelivr.net/npm/cal-sans@1.0.1/fonts/CalSans-SemiBold.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ─── Design Tokens ─────────────────────────────────────────────────────────── */
+:root {
+  --bg: #242424;
+  --surface: #2e2e2e;
+  --surface-2: #383838;
+  --border: rgba(255, 255, 255, 0.08);
+  --text: #ffffff;
+  --muted: #898989;
+  --accent: #0099ff;
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --error: #ef4444;
+  --info: #6b7280;
+
+  /* Shadow stack (multi-layer — no CSS borders) */
+  --shadow-sm:
+    0 0 0 1px rgba(255,255,255,0.06),
+    0 1px 2px rgba(0,0,0,0.4);
+  --shadow-md:
+    0 0 0 1px rgba(255,255,255,0.06),
+    0 4px 6px -1px rgba(0,0,0,0.5),
+    0 2px 4px -2px rgba(0,0,0,0.4),
+    inset 0 1px 0 rgba(255,255,255,0.06);
+  --shadow-lg:
+    0 0 0 1px rgba(255,255,255,0.06),
+    0 10px 15px -3px rgba(0,0,0,0.6),
+    0 4px 6px -4px rgba(0,0,0,0.4),
+    inset 0 1px 0 rgba(255,255,255,0.07);
+  --shadow-btn:
+    0 0 0 1px rgba(255,255,255,0.10),
+    0 2px 4px rgba(0,0,0,0.5),
+    inset 0 1px 0 rgba(255,255,255,0.12);
+}
+
+/* ─── Base ───────────────────────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.25); }
+
+/* ─── Typography helpers ─────────────────────────────────────────────────────── */
+.font-cal {
+  font-family: 'Cal Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-weight: 600;
+}
+
+/* ─── Card ───────────────────────────────────────────────────────────────────── */
+.card {
+  background: var(--surface);
+  border-radius: 10px;
+  box-shadow: var(--shadow-md);
+}
+
+/* ─── Button base ────────────────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 7px;
+  padding: 0 14px;
+  height: 34px;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+  white-space: nowrap;
+  border: none;
+  outline: none;
+}
+
+.btn:active { transform: scale(0.97); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+.btn-primary {
+  background: var(--text);
+  color: var(--bg);
+  box-shadow: var(--shadow-btn);
+}
+.btn-primary:hover:not(:disabled) { background: rgba(255,255,255,0.9); }
+
+.btn-dark {
+  background: var(--surface-2);
+  color: var(--text);
+  box-shadow: var(--shadow-sm);
+}
+.btn-dark:hover:not(:disabled) { background: #444; }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--muted);
+  box-shadow: none;
+}
+.btn-ghost:hover:not(:disabled) { color: var(--text); background: rgba(255,255,255,0.06); }
+
+.btn-danger {
+  background: var(--error);
+  color: #fff;
+  box-shadow: var(--shadow-btn);
+}
+
+/* ─── Pill badges ────────────────────────────────────────────────────────────── */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: 9999px;
+  padding: 2px 8px;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.pill-error   { background: rgba(239,68,68,0.15);   color: #fca5a5; }
+.pill-warning { background: rgba(245,158,11,0.15);  color: #fcd34d; }
+.pill-success { background: rgba(34,197,94,0.15);   color: #86efac; }
+.pill-info    { background: rgba(107,114,128,0.15); color: #9ca3af; }
+.pill-accent  { background: rgba(0,153,255,0.15);   color: #60c0ff; }
+
+/* ─── Drag-over overlay ──────────────────────────────────────────────────────── */
+.drop-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  pointer-events: none;
+}
+
+/* ─── Titlebar drag region ───────────────────────────────────────────────────── */
+.titlebar-drag {
+  -webkit-app-region: drag;
+}
+.titlebar-no-drag {
+  -webkit-app-region: no-drag;
+}
+
+/* ─── Animations ─────────────────────────────────────────────────────────────── */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.animate-fade-in { animation: fadeIn 0.2s ease; }
+.animate-spin { animation: spin 0.8s linear infinite; }
+
+/* ─── Progress bar ───────────────────────────────────────────────────────────── */
+.progress-bar {
+  height: 3px;
+  background: var(--surface-2);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 2px;
+  transition: width 0.2s ease;
+}
