@@ -9,12 +9,21 @@ const defaultOptions: ConversionOptions = {
 }
 
 describe('buildOutputPath', () => {
-  it('places output in djcheck subfolder in subfolder mode', () => {
+  it('places output in named subfolder in subfolder mode', () => {
+    const out = buildOutputPath('/music/track.wav', new Set(['WAV_32BIT_FLOAT']), {
+      ...defaultOptions,
+      outputMode: 'subfolder',
+      outputFolder: 'house',
+    })
+    expect(out).toBe('/music/house/track.aiff')
+  })
+
+  it('uses "converted" as fallback subfolder name when none provided', () => {
     const out = buildOutputPath('/music/track.wav', new Set(['WAV_32BIT_FLOAT']), {
       ...defaultOptions,
       outputMode: 'subfolder',
     })
-    expect(out).toBe('/music/djcheck/track.aiff')
+    expect(out).toBe('/music/converted/track.aiff')
   })
 
   it('replaces original (same dir, updated ext) in replace mode', () => {

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useStore, useTrackStats } from '../store'
 import PlayerSelector from './PlayerSelector'
-import type { CDJModel, OutputFormat, OutputMode } from '@shared/ipc-types'
+import type { CDJModel, OutputFormat } from '@shared/ipc-types'
 
 const OUTPUT_FORMATS: { id: OutputFormat; label: string; sublabel: string }[] = [
   { id: 'aiff-24', label: 'AIFF 24-bit', sublabel: 'Lossless · Full metadata · Universal' },
@@ -11,40 +11,10 @@ const OUTPUT_FORMATS: { id: OutputFormat; label: string; sublabel: string }[] = 
   { id: 'mp3-320', label: 'MP3 320kbps', sublabel: 'Lossy · Smallest · ID3v2.3 tags' },
 ]
 
-const OUTPUT_MODES: { id: OutputMode; icon: string; label: string; sublabel: string; danger?: boolean }[] = [
-  {
-    id: 'subfolder',
-    icon: '📁',
-    label: 'Subfolder',
-    sublabel: 'Creates a djcheck/ folder inside each source directory',
-  },
-  {
-    id: 'folder',
-    icon: '📂',
-    label: 'Custom folder',
-    sublabel: 'Save to a folder you choose',
-  },
-  {
-    id: 'replace',
-    icon: '♻️',
-    label: 'Replace originals',
-    sublabel: 'Overwrites source files — make sure you have backups',
-    danger: true,
-  },
-]
-
 export default function Sidebar() {
-  const { settings, updateSettings, outputFolder, rekordboxXmlPath, setOutputFolder, setRekordboxXmlPath } = useStore()
+  const { settings, updateSettings, rekordboxXmlPath, setRekordboxXmlPath } = useStore()
   const stats = useTrackStats()
   const [showFormatInfo, setShowFormatInfo] = useState(false)
-
-  const pickFolder = async () => {
-    const folder = await window.djcheck.pickOutputFolder()
-    if (folder) {
-      setOutputFolder(folder)
-      updateSettings({ outputMode: 'folder' })
-    }
-  }
 
   const pickXml = async () => {
     const xml = await window.djcheck.pickRekordboxXml()
@@ -138,75 +108,6 @@ export default function Sidebar() {
         </section>
       )}
 
-      {/* Output destination */}
-      <section>
-        <SectionLabel>Output Destination</SectionLabel>
-        <div className="flex flex-col gap-1.5">
-          {OUTPUT_MODES.map(m => (
-            <button
-              key={m.id}
-              onClick={() => {
-                if (m.id === 'folder') {
-                  // Open picker immediately when clicking custom folder
-                  pickFolder()
-                } else {
-                  updateSettings({ outputMode: m.id })
-                }
-              }}
-              className="flex items-start gap-3 px-3 py-2.5 rounded-lg text-left transition-all"
-              style={{
-                background: settings.outputMode === m.id ? 'rgba(255,255,255,0.08)' : 'transparent',
-                boxShadow: settings.outputMode === m.id ? '0 0 0 1px rgba(255,255,255,0.12)' : 'none',
-                border: 'none',
-                cursor: 'pointer',
-              }}
-            >
-              <span style={{ fontSize: 14, lineHeight: 1.2, marginTop: 1 }}>{m.icon}</span>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <span
-                    className="text-xs font-medium"
-                    style={{ color: m.danger && settings.outputMode === m.id ? 'var(--warning)' : 'var(--text)' }}
-                  >
-                    {m.label}
-                  </span>
-                  {settings.outputMode === m.id && (
-                    <span style={{ color: 'var(--success)', fontSize: 10 }}>✓</span>
-                  )}
-                </div>
-                <span className="text-xs" style={{ color: 'var(--muted)' }}>{m.sublabel}</span>
-              </div>
-            </button>
-          ))}
-        </div>
-
-        {/* Show selected folder path when 'folder' mode is active */}
-        {settings.outputMode === 'folder' && (
-          <div className="mt-2 animate-fade-in">
-            <button
-              onClick={pickFolder}
-              className="w-full btn btn-dark text-xs rounded-lg justify-start gap-2"
-              style={{ height: 30 }}
-            >
-              <FolderIcon />
-              <span className="truncate" style={{ color: outputFolder ? 'var(--text)' : 'var(--muted)' }}>
-                {outputFolder ? outputFolder.split('/').slice(-2).join('/') : 'Choose folder…'}
-              </span>
-            </button>
-          </div>
-        )}
-
-        {/* Replace mode warning */}
-        {settings.outputMode === 'replace' && (
-          <div
-            className="mt-2 text-xs rounded-lg p-2.5 leading-relaxed animate-fade-in"
-            style={{ background: 'rgba(245,158,11,0.1)', color: 'var(--warning)', border: '1px solid rgba(245,158,11,0.2)' }}
-          >
-            ⚠ Originals will be overwritten. Ensure you have a backup before converting.
-          </div>
-        )}
-      </section>
-
       {/* Rekordbox XML */}
       <section>
         <SectionLabel>rekordbox.xml</SectionLabel>
@@ -268,14 +169,6 @@ function StatRow({ label, value, color }: { label: string; value: number; color?
         {value}
       </span>
     </div>
-  )
-}
-
-function FolderIcon() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
-      <path d="M1.5 3.5A1 1 0 0 1 2.5 2.5h3.379l1.414 1.414A1 1 0 0 0 8 4.5h5.5A1 1 0 0 1 14.5 5.5v7a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1v-9Z" stroke="currentColor" strokeWidth="1.2" fill="none" />
-    </svg>
   )
 }
 

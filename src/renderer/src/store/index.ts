@@ -6,10 +6,13 @@ import type {
   CDJModel,
   ConversionProgress,
   OutputFormat,
+  OutputMode,
   AppSettings,
   ConversionOptions,
   ScannedFile,
 } from '@shared/ipc-types'
+
+export type { OutputMode }
 
 export type FilterMode = 'all' | 'issues' | 'clean' | 'converted'
 
@@ -62,7 +65,7 @@ interface AppState {
   conversionComplete: ConversionCompletePayload | null
   convertedPaths: Map<string, string> // trackId → output path
 
-  startConversion: (trackIds?: string[]) => void
+  startConversion: (trackIds: string[], optionsOverride?: Partial<ConversionOptions>) => void
   cancelConversion: () => void
   updateConversionProgress: (progress: ConversionProgress) => void
   handleConversionResult: (result: { trackId: string; success: boolean; outputPath?: string; error?: string }) => void
@@ -213,25 +216,25 @@ export const useStore = create<AppState>()(
     conversionComplete: null,
     convertedPaths: new Map(),
 
-    startConversion: (trackIds) => {
+    startConversion: (trackIds, optionsOverride) => {
       const state = get()
-      const ids = trackIds ?? [...state.selectedIds]
-      if (ids.length === 0) return
+      if (trackIds.length === 0) return
 
-      const tracks = ids
+      const tracks = trackIds
         .map(id => state.tracks.get(id))
         .filter(Boolean)
         .filter(t => t!.issues.length > 0) as TrackAnalysis[]
 
       if (tracks.length === 0) return
 
-      const options: ConversionOptions = {
+      const base: ConversionOptions = {
         outputFormat: state.settings.outputFormat as OutputFormat,
         outputMode: state.settings.outputMode,
         outputFolder: state.outputFolder ?? state.settings.outputFolder ?? undefined,
         rekordboxXmlPath: state.rekordboxXmlPath ?? undefined,
         applyDither: state.settings.applyDither,
       }
+      const options: ConversionOptions = { ...base, ...optionsOverride }
 
       set(s => {
         s.conversionRunning = true

@@ -83,10 +83,12 @@ export function buildOutputPath(
       // If the extension hasn't changed this is a literal in-place overwrite.
       return path.join(dir, `${base}.${outExt}`)
 
-    case 'subfolder':
-      // <sourceDir>/djcheck/<basename>.<ext>  — keeps files alongside originals
-      // but neatly separated in a sub-folder inside each source directory.
-      return path.join(dir, 'djcheck', `${base}.${outExt}`)
+    case 'subfolder': {
+      // <sourceDir>/<folderName>/<basename>.<ext>
+      // outputFolder holds the user-chosen sub-folder name (not a full path)
+      const folderName = options.outputFolder || 'converted'
+      return path.join(dir, folderName, `${base}.${outExt}`)
+    }
 
     case 'folder':
     default:
