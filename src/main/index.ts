@@ -34,6 +34,9 @@ function createWindow(): void {
 
   mainWindow.once('ready-to-show', () => {
     mainWindow!.show()
+    if (process.env.ELECTRON_RENDERER_URL) {
+      mainWindow!.webContents.openDevTools()
+    }
   })
 
   if (process.env.ELECTRON_RENDERER_URL) {

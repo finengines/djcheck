@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { useShallow } from 'zustand/react/shallow'
 import { immer } from 'zustand/middleware/immer'
 import type {
   TrackAnalysis,
@@ -296,37 +297,45 @@ export const useStore = create<AppState>()(
 
 // Derived selectors
 export function useFilteredTracks(): TrackAnalysis[] {
-  return useStore(state => {
-    const { tracks, filterMode, searchQuery } = state
-    let result = [...tracks.values()].filter(t => t.status === 'done' || t.status === 'analyzing')
+  // useShallow does a shallow-equality check so a new array with the same items
+  // (same references, same order) won't trigger a re-render.
+  return useStore(
+    useShallow((state) => {
+      const { tracks, filterMode, searchQuery, convertedPaths } = state
+      let result = [...tracks.values()].filter(t => t.status === 'done' || t.status === 'analyzing')
 
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase()
-      result = result.filter(t =>
-        t.fileName.toLowerCase().includes(q) ||
-        t.filePath.toLowerCase().includes(q)
-      )
-    }
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase()
+        result = result.filter(t =>
+          t.fileName.toLowerCase().includes(q) ||
+          t.filePath.toLowerCase().includes(q)
+        )
+      }
 
-    switch (filterMode) {
-      case 'issues':
-        return result.filter(t => t.issues.some(i => i.severity === 'error'))
-      case 'clean':
-        return result.filter(t => t.issues.filter(i => i.severity === 'error').length === 0 && t.status === 'done')
-      case 'converted':
-        return result.filter(t => state.convertedPaths.has(t.id))
-      default:
-        return result
-    }
-  })
+      switch (filterMode) {
+        case 'issues':
+          return result.filter(t => t.issues.some(i => i.severity === 'error'))
+        case 'clean':
+          return result.filter(t => t.issues.filter(i => i.severity === 'error').length === 0 && t.status === 'done')
+        case 'converted':
+          return result.filter(t => convertedPaths.has(t.id))
+        default:
+          return result
+      }
+    })
+  )
 }
 
 export function useTrackStats() {
-  return useStore(state => {
-    const all = [...state.tracks.values()].filter(t => t.status === 'done')
-    const issues = all.filter(t => t.issues.some(i => i.severity === 'error'))
-    const clean = all.filter(t => t.issues.filter(i => i.severity === 'error').length === 0)
-    const converted = [...state.convertedPaths.keys()].length
-    return { total: all.length, issues: issues.length, clean: clean.length, converted }
-  })
+  // useShallow does a shallow key/value comparison on the returned object so
+  // identical numbers don't cause a re-render even though the object is new.
+  return useStore(
+    useShallow((state) => {
+      const all = [...state.tracks.values()].filter(t => t.status === 'done')
+      const issues = all.filter(t => t.issues.some(i => i.severity === 'error'))
+      const clean = all.filter(t => t.issues.filter(i => i.severity === 'error').length === 0)
+      const converted = [...state.convertedPaths.keys()].length
+      return { total: all.length, issues: issues.length, clean: clean.length, converted }
+    })
+  )
 }
