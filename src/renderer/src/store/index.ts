@@ -7,7 +7,7 @@ import type {
   OutputFormat,
   AppSettings,
   ConversionOptions,
-} from '../../../shared/ipc-types'
+} from '@shared/ipc-types'
 
 export type FilterMode = 'all' | 'issues' | 'clean' | 'converted'
 

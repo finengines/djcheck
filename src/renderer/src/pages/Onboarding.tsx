@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useStore } from '../store'
-import type { CDJModel } from '../../../../shared/ipc-types'
-import { MODEL_LABELS, MODEL_DESCRIPTIONS } from '../../../../shared/ipc-types'
+import type { CDJModel } from '@shared/ipc-types'
+import { MODEL_LABELS, MODEL_DESCRIPTIONS } from '@shared/ipc-types'
 
 const MODELS: { id: CDJModel; year: string; badge?: string }[] = [
   { id: 'cdj-3000',     year: '2020–present', badge: 'Latest' },

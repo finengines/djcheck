@@ -3,7 +3,7 @@ import { useStore, useFilteredTracks } from '../store'
 import TrackRow from './TrackRow'
 import TrackDetailPanel from './TrackDetailPanel'
 import { useState } from 'react'
-import type { TrackAnalysis } from '../../../../shared/ipc-types'
+import type { TrackAnalysis } from '@shared/ipc-types'
 
 export default function TrackList() {
   const {

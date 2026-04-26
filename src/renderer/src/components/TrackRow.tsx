@@ -1,5 +1,5 @@
 import { memo } from 'react'
-import type { TrackAnalysis, ConversionProgress } from '../../../../shared/ipc-types'
+import type { TrackAnalysis, ConversionProgress } from '@shared/ipc-types'
 import IssueTag from './IssueTag'
 
 const FORMAT_COLORS: Record<string, string> = {

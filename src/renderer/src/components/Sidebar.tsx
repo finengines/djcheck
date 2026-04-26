@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useStore, useTrackStats } from '../store'
 import PlayerSelector from './PlayerSelector'
-import type { CDJModel, OutputFormat } from '../../../../shared/ipc-types'
+import type { CDJModel, OutputFormat } from '@shared/ipc-types'
 
 const OUTPUT_FORMATS: { id: OutputFormat; label: string; sublabel: string }[] = [
   { id: 'aiff-24', label: 'AIFF 24-bit', sublabel: 'Lossless · Full metadata · Universal' },

@@ -1,4 +1,4 @@
-import type { AudioIssue } from '../../../../shared/ipc-types'
+import type { AudioIssue } from '@shared/ipc-types'
 
 // Short display labels for each issue ID
 const ISSUE_SHORT: Record<string, string> = {

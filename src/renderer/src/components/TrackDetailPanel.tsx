@@ -1,4 +1,4 @@
-import type { TrackAnalysis } from '../../../../shared/ipc-types'
+import type { TrackAnalysis } from '@shared/ipc-types'
 import IssueTag from './IssueTag'
 
 interface Props {

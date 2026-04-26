@@ -1,5 +1,5 @@
-import type { CDJModel } from '../../../../shared/ipc-types'
-import { MODEL_LABELS } from '../../../../shared/ipc-types'
+import type { CDJModel } from '@shared/ipc-types'
+import { MODEL_LABELS } from '@shared/ipc-types'
 
 const MODELS: CDJModel[] = ['cdj-3000', 'cdj-2000nxs2', 'cdj-2000nxs', 'cdj-2000', 'all']
 
