@@ -6,6 +6,7 @@ import type {
   ConversionResult,
   ConversionProgress,
   AppSettings,
+  ScannedFile,
 } from '../shared/ipc-types'
 import { IPC_CHANNELS } from '../shared/ipc-types'
 
@@ -63,6 +64,10 @@ const api = {
     ipcRenderer.invoke(IPC_CHANNELS.PICK_REKORDBOX_XML),
   pickAudioFiles: (): Promise<string[]> =>
     ipcRenderer.invoke(IPC_CHANNELS.PICK_AUDIO_FILES),
+  pickInputFolder: (): Promise<ScannedFile[]> =>
+    ipcRenderer.invoke(IPC_CHANNELS.PICK_INPUT_FOLDER),
+  scanFolders: (folderPaths: string[]): Promise<ScannedFile[]> =>
+    ipcRenderer.invoke(IPC_CHANNELS.SCAN_FOLDERS, folderPaths),
   openFileExternally: (filePath: string): void => {
     ipcRenderer.send(IPC_CHANNELS.OPEN_FILE_EXTERNALLY, filePath)
   },

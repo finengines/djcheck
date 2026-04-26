@@ -45,6 +45,7 @@ export function registerConvertHandlers(): void {
           filePath: track.filePath,
           issues: track.issues,
           options,
+          sourceRoot: track.sourceRoot,
           onProgress: sendProgress,
         })
 

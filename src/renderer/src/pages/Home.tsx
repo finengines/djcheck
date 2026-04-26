@@ -32,15 +32,39 @@ export default function Home() {
     if (!e.relatedTarget) setDragOver(false)
   }, [setDragOver])
 
-  const handleDrop = useCallback((e: DragEvent) => {
+  const handleDrop = useCallback(async (e: DragEvent) => {
     e.preventDefault()
     setDragOver(false)
-    const files = Array.from(e.dataTransfer?.files ?? [])
+
+    const items = Array.from(e.dataTransfer?.items ?? [])
     const supported = ['.mp3','.wav','.wave','.aif','.aiff','.m4a','.m4p','.flac','.ogg','.oga','.aac']
-    const paths = files
-      .filter(f => supported.some(ext => f.name.toLowerCase().endsWith(ext)))
-      .map(f => f.path)
-    if (paths.length > 0) startAnalysis(paths)
+
+    const filePaths: string[] = []
+    const folderPaths: string[] = []
+
+    for (const item of items) {
+      const entry = item.webkitGetAsEntry?.()
+      const file = item.getAsFile()
+      if (!file?.path) continue
+      if (entry?.isDirectory) {
+        folderPaths.push(file.path)
+      } else if (supported.some(ext => file.name.toLowerCase().endsWith(ext))) {
+        filePaths.push(file.path)
+      }
+    }
+
+    // Scan folders for audio files
+    let scannedFromFolders: import('@shared/ipc-types').ScannedFile[] = []
+    if (folderPaths.length > 0) {
+      scannedFromFolders = await window.djcheck.scanFolders(folderPaths)
+    }
+
+    const allFiles: import('@shared/ipc-types').ScannedFile[] = [
+      ...filePaths.map(p => ({ filePath: p, sourceRoot: '' })),
+      ...scannedFromFolders,
+    ]
+
+    if (allFiles.length > 0) startAnalysis(allFiles)
   }, [setDragOver, startAnalysis])
 
   useEffect(() => {

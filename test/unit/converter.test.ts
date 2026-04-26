@@ -42,12 +42,24 @@ describe('buildOutputPath', () => {
     expect(out.endsWith('.wav')).toBe(true)
   })
 
-  it('keeps mp3 extension for MP3 issues', () => {
-    const out = buildOutputPath('/music/track.mp3', new Set(['MP3_VBR_NO_XING']), {
+  it('keeps mp3 extension for MP3 issues regardless of selected outputFormat', () => {
+    // MP3 passthrough: even if user chose aiff-24, MP3 sources stay as MP3
+    for (const fmt of ['aiff-24', 'aiff-16', 'wav-24', 'wav-16', 'mp3-320'] as const) {
+      const out = buildOutputPath('/music/track.mp3', new Set(['MP3_VBR_NO_XING']), {
+        ...defaultOptions,
+        outputFormat: fmt,
+      })
+      expect(out.endsWith('.mp3')).toBe(true)
+    }
+  })
+
+  it('replicates folder tree when sourceRoot is provided', () => {
+    const out = buildOutputPath('/music/house/deep/track.wav', new Set(['WAV_32BIT_FLOAT']), {
       ...defaultOptions,
-      outputFormat: 'mp3-320',
-    })
-    expect(out.endsWith('.mp3')).toBe(true)
+      outputMode: 'folder',
+      outputFolder: '/output',
+    }, '/music/house')
+    expect(out).toBe('/output/deep/track.aiff')
   })
 })
 
@@ -101,6 +113,17 @@ describe('buildFfmpegArgs — MP3 output', () => {
   it('uses ID3v2.3 for CDJ compatibility', () => {
     const { outputOptions } = buildFfmpegArgs('/track.flac', new Set(['FLAC_UNSUPPORTED']), 'mp3-320', false)
     expect(outputOptions).toContain('-id3v2_version 3')
+  })
+
+  it('MP3 passthrough: always outputs libmp3lame when source is MP3, even if aiff-24 format selected', () => {
+    const { outputOptions } = buildFfmpegArgs('/track.mp3', new Set(['MP3_VBR_NO_XING']), 'aiff-24', false)
+    expect(outputOptions).toContain('-acodec libmp3lame')
+    expect(outputOptions.some(o => o.includes('pcm_s'))).toBe(false)
+  })
+
+  it('MP3 passthrough: does NOT apply dither to MP3 output', () => {
+    const { audioFilters } = buildFfmpegArgs('/track.mp3', new Set(['MP3_VBR_NO_XING']), 'aiff-16', true)
+    expect(audioFilters.some(f => f.includes('dither'))).toBe(false)
   })
 })
 

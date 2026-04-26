@@ -13,17 +13,18 @@ export function registerAnalyzeHandlers(): void {
     if (!win) return
 
     cancelRequested = false
-    const { filePaths, targetModel } = payload
-    const queue = [...filePaths]
+    const { files, targetModel } = payload
+    const queue = [...files]
     const active = new Set<Promise<void>>()
 
     const runOne = async (): Promise<void> => {
       if (queue.length === 0 || cancelRequested) return
-      const filePath = queue.shift()!
+      const file = queue.shift()!
       const trackId = crypto.randomUUID()
 
       win.webContents.send(IPC_CHANNELS.ANALYSIS_PROGRESS, trackId)
-      const result = await analyzeFile(filePath, targetModel, trackId)
+      const result = await analyzeFile(file.filePath, targetModel, trackId)
+      if (file.sourceRoot) result.sourceRoot = file.sourceRoot
       win.webContents.send(IPC_CHANNELS.ANALYSIS_RESULT, result)
     }
 

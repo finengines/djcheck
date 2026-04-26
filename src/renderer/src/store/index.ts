@@ -8,6 +8,7 @@ import type {
   OutputFormat,
   AppSettings,
   ConversionOptions,
+  ScannedFile,
 } from '@shared/ipc-types'
 
 export type FilterMode = 'all' | 'issues' | 'clean' | 'converted'
@@ -42,7 +43,7 @@ interface AppState {
   searchQuery: string
   selectedIds: Set<string>
 
-  startAnalysis: (filePaths: string[]) => void
+  startAnalysis: (files: ScannedFile[] | string[]) => void
   cancelAnalysis: () => void
   clearTracks: () => void
   addPendingTrack: (trackId: string) => void
@@ -120,10 +121,15 @@ export const useStore = create<AppState>()(
     searchQuery: '',
     selectedIds: new Set(),
 
-    startAnalysis: (filePaths) => {
+    startAnalysis: (input) => {
+      // Normalise: accept either plain string[] or ScannedFile[]
+      const files: ScannedFile[] = input.map(f =>
+        typeof f === 'string' ? { filePath: f, sourceRoot: '' } : f
+      )
+
       set(state => {
         state.analysisRunning = true
-        state.analysisTotal = filePaths.length
+        state.analysisTotal = files.length
         state.analysisDone = 0
       })
 
@@ -144,7 +150,7 @@ export const useStore = create<AppState>()(
       }))
 
       window.djcheck.analyzeFiles({
-        filePaths,
+        files,
         targetModel: get().settings.targetModel,
       })
     },
@@ -249,7 +255,7 @@ export const useStore = create<AppState>()(
       }))
 
       window.djcheck.convertTracks({
-        tracks: tracks.map(t => ({ trackId: t.id, filePath: t.filePath, issues: t.issues })),
+        tracks: tracks.map(t => ({ trackId: t.id, filePath: t.filePath, issues: t.issues, sourceRoot: t.sourceRoot })),
         targetModel: state.settings.targetModel,
         options,
       })

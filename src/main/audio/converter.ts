@@ -19,6 +19,8 @@ export interface ConversionJob {
   filePath: string
   issues: AudioIssue[]
   options: ConversionOptions
+  /** Original folder root the file was scanned from — used to replicate tree in output */
+  sourceRoot?: string
   onProgress: (percent: number, stage: 'preparing' | 'converting' | 'writing-tags' | 'done') => void
 }
 
@@ -45,20 +47,42 @@ export async function patchWavExtensible(filePath: string): Promise<boolean> {
   return false
 }
 
+// ─── MP3 passthrough logic ────────────────────────────────────────────────────
+// If the source is already an MP3, always re-encode as MP3 rather than
+// converting to a lossless format — transcoding lossy→lossless wastes space
+// and adds a generation of quality loss with no benefit.
+
+function isSourceMp3(filePath: string): boolean {
+  return path.extname(filePath).toLowerCase() === '.mp3'
+}
+
+/** The effective output format, honouring MP3 passthrough. */
+function effectiveFormat(filePath: string, outputFormat: OutputFormat): OutputFormat {
+  return isSourceMp3(filePath) ? 'mp3-320' : outputFormat
+}
+
 // ─── Build output path ────────────────────────────────────────────────────────
 
 export function buildOutputPath(
   filePath: string,
   issueIds: Set<string>,
-  options: ConversionOptions
+  options: ConversionOptions,
+  /** Original scan-root folder — when provided the relative sub-path is preserved */
+  sourceRoot?: string
 ): string {
   const ext = path.extname(filePath).toLowerCase()
   const base = path.basename(filePath, ext)
   const dir = path.dirname(filePath)
 
-  const outExt = getOutputExtension(ext, issueIds, options.outputFormat)
+  const fmt = effectiveFormat(filePath, options.outputFormat)
+  const outExt = getOutputExtension(ext, issueIds, fmt)
 
   if (options.outputMode === 'folder' && options.outputFolder) {
+    if (sourceRoot) {
+      // Replicate the sub-folder tree: <outputFolder>/<relative/path/base.ext>
+      const relDir = path.relative(sourceRoot, dir)
+      return path.join(options.outputFolder, relDir, `${base}.${outExt}`)
+    }
     return path.join(options.outputFolder, `${base}.${outExt}`)
   }
   return path.join(dir, `${base}_djcheck.${outExt}`)
@@ -69,23 +93,16 @@ function getOutputExtension(
   issueIds: Set<string>,
   outputFormat: OutputFormat
 ): string {
-  // Format conversions always go to user-chosen format
+  // Format conversions (FLAC/ALAC/OGG → user-chosen lossless or MP3)
   if (issueIds.has('FLAC_UNSUPPORTED') || issueIds.has('ALAC_UNSUPPORTED') ||
-      issueIds.has('OGG_UNSUPPORTED')) {
+      issueIds.has('OGG_UNSUPPORTED') ||
+      issueIds.has('FLAC_SAMPLE_RATE_HIGH') || issueIds.has('FLAC_BIT_DEPTH')) {
     return formatToExt(outputFormat)
   }
-  if (issueIds.has('FLAC_SAMPLE_RATE_HIGH') || issueIds.has('FLAC_BIT_DEPTH')) {
-    return formatToExt(outputFormat)
-  }
-  // For MP3 issues, stay as MP3 unless user chose a lossless format
-  if (['.mp3'].includes(origExt)) {
-    if (outputFormat === 'mp3-320') return 'mp3'
-    return 'mp3' // keep as MP3 — re-encode lossless MP3 would increase size with no benefit
-  }
-  // For WAV/AIFF issues, output to chosen format
-  if (['.wav', '.wave'].includes(origExt) || ['.aif', '.aiff'].includes(origExt)) {
-    return formatToExt(outputFormat)
-  }
+  // MP3 passthrough — always stay MP3 (effectiveFormat already enforces this,
+  // but guard here too in case buildOutputPath is called directly in tests)
+  if (origExt === '.mp3') return 'mp3'
+  // WAV/AIFF → user-chosen format
   return formatToExt(outputFormat)
 }
 
@@ -114,11 +131,13 @@ export function buildFfmpegArgs(
   const outputOptions: string[] = []
   const audioFilters: string[] = []
   const origExt = path.extname(filePath).toLowerCase()
-  const outExt = formatToExt(outputFormat)
+  // Honour MP3 passthrough: if source is MP3 always output as MP3
+  const fmt = effectiveFormat(filePath, outputFormat)
+  const outExt = formatToExt(fmt)
 
   // Determine output codec
-  const targetBitDepth = outputFormat.includes('-16') ? 16 : 24
-  const isDitherNeeded = applyDither && (
+  const targetBitDepth = fmt.includes('-16') ? 16 : 24
+  const isDitherNeeded = outExt !== 'mp3' && applyDither && (
     targetBitDepth === 16 ||
     issueIds.has('WAV_32BIT_FLOAT') ||
     issueIds.has('AIFF_BIT_DEPTH_32') ||
@@ -254,7 +273,7 @@ export async function convertTrack(job: ConversionJob): Promise<string> {
   }
 
   // Full ffmpeg conversion
-  const outputPath = buildOutputPath(filePath, issueIds, options)
+  const outputPath = buildOutputPath(filePath, issueIds, options, job.sourceRoot)
 
   // Ensure output directory exists
   await fs.mkdir(path.dirname(outputPath), { recursive: true })

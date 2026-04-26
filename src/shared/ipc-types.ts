@@ -37,6 +37,15 @@ export interface TrackAnalysis {
   analysisError?: string
   hasArtwork?: boolean
   artworkFormat?: string | null
+  /** The folder root this track was scanned from (for replicating folder tree in output) */
+  sourceRoot?: string
+}
+
+/** A file discovered during a folder scan */
+export interface ScannedFile {
+  filePath: string
+  /** The top-level folder the user dropped / selected — used to replicate the tree in output */
+  sourceRoot: string
 }
 
 export interface ConversionResult {
@@ -79,6 +88,8 @@ export const IPC_CHANNELS = {
   PICK_OUTPUT_FOLDER: 'dialog:pick-output-folder',
   PICK_REKORDBOX_XML: 'dialog:pick-rekordbox-xml',
   PICK_AUDIO_FILES: 'dialog:pick-audio-files',
+  PICK_INPUT_FOLDER: 'dialog:pick-input-folder',
+  SCAN_FOLDERS: 'dialog:scan-folders',
   OPEN_FILE_EXTERNALLY: 'shell:open-file',
   REVEAL_IN_FINDER: 'shell:reveal',
 
@@ -89,12 +100,12 @@ export const IPC_CHANNELS = {
 } as const
 
 export interface AnalyzeFilesPayload {
-  filePaths: string[]
+  files: Array<{ filePath: string; sourceRoot?: string }>
   targetModel: CDJModel
 }
 
 export interface ConvertTracksPayload {
-  tracks: Array<{ trackId: string; filePath: string; issues: AudioIssue[] }>
+  tracks: Array<{ trackId: string; filePath: string; issues: AudioIssue[]; sourceRoot?: string }>
   targetModel: CDJModel
   options: ConversionOptions
 }

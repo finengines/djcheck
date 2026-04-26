@@ -1,7 +1,30 @@
 import { ipcMain, dialog, shell, BrowserWindow } from 'electron'
 import { IPC_CHANNELS } from '../../shared/ipc-types'
+import type { AppSettings, ScannedFile } from '../../shared/ipc-types'
 import Store from 'electron-store'
-import type { AppSettings } from '../../shared/ipc-types'
+import * as fs from 'fs'
+import * as path from 'path'
+
+const AUDIO_EXTS = new Set(['.mp3', '.wav', '.wave', '.aif', '.aiff', '.m4a', '.m4p', '.flac', '.ogg', '.oga', '.aac'])
+
+function scanFolderRecursive(folderPath: string, sourceRoot: string): ScannedFile[] {
+  const results: ScannedFile[] = []
+  function scan(dir: string) {
+    let entries: fs.Dirent[]
+    try { entries = fs.readdirSync(dir, { withFileTypes: true }) } catch { return }
+    for (const entry of entries) {
+      if (entry.name.startsWith('.')) continue
+      const fullPath = path.join(dir, entry.name)
+      if (entry.isDirectory()) {
+        scan(fullPath)
+      } else if (entry.isFile() && AUDIO_EXTS.has(path.extname(entry.name).toLowerCase())) {
+        results.push({ filePath: fullPath, sourceRoot })
+      }
+    }
+  }
+  scan(folderPath)
+  return results
+}
 
 const store = new Store<AppSettings>({
   defaults: {
@@ -55,6 +78,28 @@ export function registerDialogHandlers(): void {
 
   ipcMain.on(IPC_CHANNELS.REVEAL_IN_FINDER, (_event, filePath: string) => {
     shell.showItemInFolder(filePath)
+  })
+
+  ipcMain.handle(IPC_CHANNELS.PICK_INPUT_FOLDER, async (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender)
+    const result = await dialog.showOpenDialog(win!, {
+      properties: ['openDirectory', 'createDirectory', 'multiSelections'],
+      title: 'Select Folder to Analyse',
+    })
+    if (result.canceled) return []
+    const scanned: ScannedFile[] = []
+    for (const folderPath of result.filePaths) {
+      scanned.push(...scanFolderRecursive(folderPath, folderPath))
+    }
+    return scanned
+  })
+
+  ipcMain.handle(IPC_CHANNELS.SCAN_FOLDERS, (_event, folderPaths: string[]) => {
+    const scanned: ScannedFile[] = []
+    for (const folderPath of folderPaths) {
+      scanned.push(...scanFolderRecursive(folderPath, folderPath))
+    }
+    return scanned
   })
 
   ipcMain.handle(IPC_CHANNELS.GET_SETTINGS, () => {

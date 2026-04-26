@@ -3,9 +3,14 @@ import { useStore } from '../store'
 export default function EmptyState() {
   const { analysisRunning, startAnalysis } = useStore()
 
-  const handleClick = async () => {
+  const handleBrowseFiles = async () => {
     const paths = await window.djcheck.pickAudioFiles()
     if (paths.length > 0) startAnalysis(paths)
+  }
+
+  const handleBrowseFolder = async () => {
+    const scanned = await window.djcheck.pickInputFolder()
+    if (scanned.length > 0) startAnalysis(scanned)
   }
 
   return (
@@ -28,15 +33,24 @@ export default function EmptyState() {
               Check your tracks
             </h2>
             <p className="text-sm leading-relaxed mb-6" style={{ color: 'var(--muted)' }}>
-              Drop audio files here, or click to browse. DJCheck analyses every file for CDJ compatibility issues and fixes them locally — no upload, instant results.
+              Drop audio files or a folder here, or click to browse. DJCheck analyses every file for CDJ compatibility issues and fixes them locally — no upload, instant results.
             </p>
-            <button onClick={handleClick} className="btn btn-primary px-8 h-11 text-sm font-semibold">
-              Browse files
-            </button>
+            <div className="flex gap-2 justify-center">
+              <button onClick={handleBrowseFiles} className="btn btn-primary px-6 h-11 text-sm font-semibold">
+                Browse files
+              </button>
+              <button
+                onClick={handleBrowseFolder}
+                className="btn btn-dark px-6 h-11 text-sm font-semibold"
+              >
+                <FolderIcon />
+                Browse folder
+              </button>
+            </div>
           </div>
 
           <p className="text-xs text-center" style={{ color: 'var(--muted)', opacity: 0.5 }}>
-            MP3 · WAV · AIFF · FLAC · M4A · OGG
+            MP3 · WAV · AIFF · FLAC · M4A · OGG · drag &amp; drop folders supported
           </p>
         </>
       )}
@@ -60,5 +74,13 @@ function WaveformIllustration() {
         />
       ))}
     </div>
+  )
+}
+
+function FolderIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0, marginRight: 4 }}>
+      <path d="M1.5 3.5A1 1 0 0 1 2.5 2.5h3.379l1.414 1.414A1 1 0 0 0 8 4.5h5.5A1 1 0 0 1 14.5 5.5v7a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1v-9Z" stroke="currentColor" strokeWidth="1.2" fill="none" />
+    </svg>
   )
 }
