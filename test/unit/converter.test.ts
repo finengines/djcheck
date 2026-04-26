@@ -4,17 +4,25 @@ import type { ConversionOptions } from '../../src/shared/ipc-types'
 
 const defaultOptions: ConversionOptions = {
   outputFormat: 'aiff-24',
-  outputMode: 'suffix',
+  outputMode: 'subfolder',
   applyDither: true,
 }
 
 describe('buildOutputPath', () => {
-  it('appends _djcheck suffix in suffix mode', () => {
+  it('places output in djcheck subfolder in subfolder mode', () => {
     const out = buildOutputPath('/music/track.wav', new Set(['WAV_32BIT_FLOAT']), {
       ...defaultOptions,
-      outputMode: 'suffix',
+      outputMode: 'subfolder',
     })
-    expect(out).toBe('/music/track_djcheck.aiff')
+    expect(out).toBe('/music/djcheck/track.aiff')
+  })
+
+  it('replaces original (same dir, updated ext) in replace mode', () => {
+    const out = buildOutputPath('/music/track.wav', new Set(['WAV_32BIT_FLOAT']), {
+      ...defaultOptions,
+      outputMode: 'replace',
+    })
+    expect(out).toBe('/music/track.aiff')
   })
 
   it('places output in chosen folder in folder mode', () => {

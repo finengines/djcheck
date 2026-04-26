@@ -86,7 +86,7 @@ export const useStore = create<AppState>()(
     settings: {
       targetModel: 'cdj-2000nxs2',
       outputFormat: 'aiff-24',
-      outputMode: 'folder',
+      outputMode: 'subfolder',
       outputFolder: null,
       onboardingComplete: false,
       applyDither: true,
@@ -228,7 +228,7 @@ export const useStore = create<AppState>()(
       const options: ConversionOptions = {
         outputFormat: state.settings.outputFormat as OutputFormat,
         outputMode: state.settings.outputMode,
-        outputFolder: state.outputFolder ?? undefined,
+        outputFolder: state.outputFolder ?? state.settings.outputFolder ?? undefined,
         rekordboxXmlPath: state.rekordboxXmlPath ?? undefined,
         applyDither: state.settings.applyDither,
       }

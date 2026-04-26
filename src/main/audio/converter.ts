@@ -67,7 +67,7 @@ export function buildOutputPath(
   filePath: string,
   issueIds: Set<string>,
   options: ConversionOptions,
-  /** Original scan-root folder — when provided the relative sub-path is preserved */
+  /** Original scan-root folder — when provided the relative sub-path is preserved in 'folder' mode */
   sourceRoot?: string
 ): string {
   const ext = path.extname(filePath).toLowerCase()
@@ -77,15 +77,30 @@ export function buildOutputPath(
   const fmt = effectiveFormat(filePath, options.outputFormat)
   const outExt = getOutputExtension(ext, issueIds, fmt)
 
-  if (options.outputMode === 'folder' && options.outputFolder) {
-    if (sourceRoot) {
-      // Replicate the sub-folder tree: <outputFolder>/<relative/path/base.ext>
-      const relDir = path.relative(sourceRoot, dir)
-      return path.join(options.outputFolder, relDir, `${base}.${outExt}`)
-    }
-    return path.join(options.outputFolder, `${base}.${outExt}`)
+  switch (options.outputMode) {
+    case 'replace':
+      // Same directory, same basename — just update the extension.
+      // If the extension hasn't changed this is a literal in-place overwrite.
+      return path.join(dir, `${base}.${outExt}`)
+
+    case 'subfolder':
+      // <sourceDir>/djcheck/<basename>.<ext>  — keeps files alongside originals
+      // but neatly separated in a sub-folder inside each source directory.
+      return path.join(dir, 'djcheck', `${base}.${outExt}`)
+
+    case 'folder':
+    default:
+      if (options.outputFolder) {
+        if (sourceRoot) {
+          // Replicate the sub-folder tree: <outputFolder>/<relative/path>/<base.ext>
+          const relDir = path.relative(sourceRoot, dir)
+          return path.join(options.outputFolder, relDir, `${base}.${outExt}`)
+        }
+        return path.join(options.outputFolder, `${base}.${outExt}`)
+      }
+      // Fallback if no folder chosen — use subfolder behaviour
+      return path.join(dir, 'djcheck', `${base}.${outExt}`)
   }
-  return path.join(dir, `${base}_djcheck.${outExt}`)
 }
 
 function getOutputExtension(
@@ -284,9 +299,20 @@ export async function convertTrack(job: ConversionJob): Promise<string> {
 
   onProgress(5, 'converting')
 
-  await runFfmpeg(filePath, outputPath, outputOptions, audioFilters, (pct) => {
+  // If output === input (replace mode, same extension) write to a temp file first
+  // then atomically rename so we never corrupt the original on failure.
+  const sameFile = path.resolve(outputPath) === path.resolve(filePath)
+  const ffmpegTarget = sameFile
+    ? path.join(path.dirname(outputPath), `.__djcheck_tmp_${path.basename(outputPath)}`)
+    : outputPath
+
+  await runFfmpeg(filePath, ffmpegTarget, outputOptions, audioFilters, (pct) => {
     onProgress(5 + Math.floor(pct * 0.9), 'converting')
   })
+
+  if (sameFile) {
+    await fs.rename(ffmpegTarget, outputPath)
+  }
 
   onProgress(98, 'writing-tags')
   onProgress(100, 'done')

@@ -30,7 +30,7 @@ const store = new Store<AppSettings>({
   defaults: {
     targetModel: 'cdj-2000nxs2',
     outputFormat: 'aiff-24',
-    outputMode: 'folder',
+    outputMode: 'subfolder',
     outputFolder: null,
     onboardingComplete: false,
     applyDither: true,

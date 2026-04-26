@@ -64,9 +64,17 @@ export interface ConversionProgress {
 
 export type OutputFormat = 'aiff-24' | 'aiff-16' | 'wav-24' | 'wav-16' | 'mp3-320'
 
+/**
+ * replace   — overwrite the original file in its source directory
+ *             (same ext: literal overwrite; format change: new ext, original left alongside)
+ * subfolder — create a "djcheck" subfolder inside each file's own directory
+ * folder    — save to a user-chosen folder, replicating the sub-tree when sourceRoot is set
+ */
+export type OutputMode = 'replace' | 'subfolder' | 'folder'
+
 export interface ConversionOptions {
   outputFormat: OutputFormat
-  outputMode: 'suffix' | 'folder'
+  outputMode: OutputMode
   outputFolder?: string
   rekordboxXmlPath?: string
   applyDither: boolean
@@ -113,7 +121,7 @@ export interface ConvertTracksPayload {
 export interface AppSettings {
   targetModel: CDJModel
   outputFormat: OutputFormat
-  outputMode: 'suffix' | 'folder'
+  outputMode: OutputMode
   outputFolder: string | null
   onboardingComplete: boolean
   applyDither: boolean
