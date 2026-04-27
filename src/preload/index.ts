@@ -86,6 +86,18 @@ const api = {
     ipcRenderer.once(IPC_CHANNELS.PREFLIGHT_RESULT, (_e, r) => cb(r))
     return () => ipcRenderer.removeListener(IPC_CHANNELS.PREFLIGHT_RESULT, cb)
   },
+
+  // ─── Menu events (from native app menu) ─────────────────────────────────────
+  onMenuOpenFiles: (cb: (filePaths: string[]) => void): Unsubscribe => {
+    const handler = (_: Electron.IpcRendererEvent, paths: string[]): void => cb(paths)
+    ipcRenderer.on('menu:open-files', handler)
+    return () => ipcRenderer.removeListener('menu:open-files', handler)
+  },
+  onMenuOpenFolders: (cb: (folderPaths: string[]) => void): Unsubscribe => {
+    const handler = (_: Electron.IpcRendererEvent, paths: string[]): void => cb(paths)
+    ipcRenderer.on('menu:open-folders', handler)
+    return () => ipcRenderer.removeListener('menu:open-folders', handler)
+  },
 }
 
 contextBridge.exposeInMainWorld('djcheck', api)

@@ -71,12 +71,25 @@ export default function Home() {
     document.addEventListener('dragover', handleDragOver)
     document.addEventListener('dragleave', handleDragLeave)
     document.addEventListener('drop', handleDrop)
+
+    // Listen for native menu events
+    const unsubFiles = window.djcheck.onMenuOpenFiles(async (filePaths) => {
+      const files = filePaths.map(p => ({ filePath: p, sourceRoot: '' }))
+      if (files.length > 0) startAnalysis(files)
+    })
+    const unsubFolders = window.djcheck.onMenuOpenFolders(async (folderPaths) => {
+      const scanned = await window.djcheck.scanFolders(folderPaths)
+      if (scanned.length > 0) startAnalysis(scanned)
+    })
+
     return () => {
       document.removeEventListener('dragover', handleDragOver)
       document.removeEventListener('dragleave', handleDragLeave)
       document.removeEventListener('drop', handleDrop)
+      unsubFiles()
+      unsubFolders()
     }
-  }, [handleDragOver, handleDragLeave, handleDrop])
+  }, [handleDragOver, handleDragLeave, handleDrop, startAnalysis])
 
   return (
     <div className="flex flex-col h-full" style={{ background: 'var(--bg)' }}>
