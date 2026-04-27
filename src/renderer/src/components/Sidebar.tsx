@@ -151,7 +151,7 @@ export default function Sidebar() {
 
       {/* Footer */}
       <div className="text-xs text-center" style={{ color: 'var(--muted)', opacity: 0.5 }}>
-        DJCheck v0.1.0
+        DJCheck v{__APP_VERSION__}
       </div>
     </div>
   )

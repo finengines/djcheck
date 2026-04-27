@@ -1,6 +1,6 @@
 {
   "name": "djcheck",
-  "version": "1.0.0-beta.2",
+  "version": "1.0.0-beta.3",
   "description": "Scan your DJ music library for Pioneer CDJ compatibility issues and fix them automatically",
   "author": {
     "name": "Fin Engines",
