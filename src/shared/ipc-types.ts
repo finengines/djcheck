@@ -131,7 +131,7 @@ export interface AppSettings {
 export const MODEL_LABELS: Record<CDJModel, string> = {
   'cdj-2000': 'CDJ-2000 / CDJ-900 / CDJ-850',
   'cdj-2000nxs': 'CDJ-2000NXS / XDJ-1000',
-  'cdj-2000nxs2': 'CDJ-2000NXS2',
+  'cdj-2000nxs2': 'CDJ-2000NXS2 / XDJ-1000MK2',
   'cdj-3000': 'CDJ-3000',
   'cdj-3000x': 'CDJ-3000X',
   'all': 'All CDJs (widest compatibility)',

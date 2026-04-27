@@ -167,7 +167,7 @@ function buildMenu(): void {
               '  44.1/48 kHz WAV & AIFF only',
               '',
               'CDJ-2000NXS2 / XDJ-1000MK2',
-              '  Up to 96 kHz. ALAC supported. No FLAC.',
+              '  Up to 96 kHz. FLAC & ALAC supported.',
               '',
               'CDJ-3000 / CDJ-3000X',
               '  Up to 96 kHz. FLAC & ALAC supported.',
