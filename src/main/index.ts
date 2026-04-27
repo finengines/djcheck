@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from 'electron'
+import { app, BrowserWindow, Menu, shell, dialog } from 'electron'
 import { join } from 'path'
 import { runPreflight } from './setup/preflight'
 import { registerAnalyzeHandlers } from './ipc/analyze'
@@ -17,6 +17,7 @@ function createWindow(): void {
     minHeight: 600,
     titleBarStyle: 'hiddenInset',
     backgroundColor: '#242424',
+    title: 'DJCheck',
     show: false,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
@@ -46,13 +47,162 @@ function createWindow(): void {
   }
 }
 
+function buildMenu(): void {
+  const isMac = process.platform === 'darwin'
+
+  const macAppMenu: Electron.MenuItemConstructorOptions = {
+    label: 'DJCheck',
+    submenu: [
+      { label: 'About DJCheck', click: () => { dialog.showMessageBox({ type: 'info', title: 'About DJCheck', message: 'DJCheck', detail: `Version ${app.getVersion()}\n\nPioneer CDJ Audio File Compatibility Checker\n\nChecks your audio files against Pioneer CDJ player specifications and auto-fixes issues.`, buttons: ['OK'] }) } },
+      { type: 'separator' },
+      { label: 'Preferences…', accelerator: 'Cmd+,', click: () => { /* TODO: open settings */ } },
+      { type: 'separator' },
+      { role: 'hide' },
+      { role: 'hideOthers' },
+      { role: 'unhide' },
+      { type: 'separator' },
+      { role: 'quit' },
+    ],
+  }
+
+  const fileMenu: Electron.MenuItemConstructorOptions = {
+    label: 'File',
+    submenu: [
+      {
+        label: 'Open Files…',
+        accelerator: 'CmdOrCtrl+O',
+        click: async () => {
+          if (!mainWindow) return
+          const result = await dialog.showOpenDialog(mainWindow, {
+            properties: ['openFile', 'multiSelections'],
+            title: 'Select Audio Files',
+            filters: [{ name: 'Audio Files', extensions: ['mp3', 'wav', 'wave', 'aif', 'aiff', 'm4a', 'm4p', 'flac', 'ogg', 'oga', 'aac'] }],
+          })
+          if (!result.canceled && result.filePaths.length > 0) {
+            mainWindow.webContents.send('menu:open-files', result.filePaths)
+          }
+        },
+      },
+      {
+        label: 'Open Folder…',
+        accelerator: 'CmdOrCtrl+Shift+O',
+        click: async () => {
+          if (!mainWindow) return
+          const result = await dialog.showOpenDialog(mainWindow, {
+            properties: ['openDirectory', 'createDirectory', 'multiSelections'],
+            title: 'Select Folder to Analyse',
+          })
+          if (!result.canceled && result.filePaths.length > 0) {
+            mainWindow.webContents.send('menu:open-folders', result.filePaths)
+          }
+        },
+      },
+      { type: 'separator' },
+      isMac ? { role: 'close' } : { role: 'quit' },
+    ],
+  }
+
+  const editMenu: Electron.MenuItemConstructorOptions = {
+    label: 'Edit',
+    submenu: [
+      { role: 'undo' },
+      { role: 'redo' },
+      { type: 'separator' },
+      { role: 'cut' },
+      { role: 'copy' },
+      { role: 'paste' },
+      { role: 'selectAll' },
+    ],
+  }
+
+  const viewMenu: Electron.MenuItemConstructorOptions = {
+    label: 'View',
+    submenu: [
+      { role: 'reload' },
+      { role: 'forceReload' },
+      { role: 'toggleDevTools' },
+      { type: 'separator' },
+      { role: 'resetZoom' },
+      { role: 'zoomIn' },
+      { role: 'zoomOut' },
+      { type: 'separator' },
+      { role: 'togglefullscreen' },
+    ],
+  }
+
+  const windowMenu: Electron.MenuItemConstructorOptions = {
+    label: 'Window',
+    submenu: [
+      { role: 'minimize' },
+      { role: 'zoom' },
+      { type: 'separator' },
+      { role: 'front' },
+    ],
+  }
+
+  const helpMenu: Electron.MenuItemConstructorOptions = {
+    label: 'Help',
+    submenu: [
+      {
+        label: 'DJCheck Help',
+        click: () => { shell.openExternal('https://github.com/finengines/djcheck') },
+      },
+      {
+        label: 'Report an Issue',
+        click: () => { shell.openExternal('https://github.com/finengines/djcheck/issues') },
+      },
+      { type: 'separator' },
+      {
+        label: 'Supported CDJ Models',
+        click: () => {
+          dialog.showMessageBox({
+            type: 'info',
+            title: 'Supported CDJ Models',
+            message: 'Supported Pioneer CDJ Models',
+            detail: [
+              'CDJ-2000 / CDJ-900 / CDJ-850 / CDJ-400 / CDJ-350',
+              '  44.1/48 kHz WAV & AIFF only',
+              '',
+              'CDJ-2000NXS / XDJ-1000',
+              '  44.1/48 kHz WAV & AIFF only',
+              '',
+              'CDJ-2000NXS2 / XDJ-1000MK2',
+              '  Up to 96 kHz. ALAC supported. No FLAC.',
+              '',
+              'CDJ-3000 / CDJ-3000X',
+              '  Up to 96 kHz. FLAC & ALAC supported.',
+            ].join('\n'),
+            buttons: ['OK'],
+          })
+        },
+      },
+    ],
+  }
+
+  const template: Electron.MenuItemConstructorOptions[] = [
+    ...(isMac ? [macAppMenu] : []),
+    fileMenu,
+    editMenu,
+    viewMenu,
+    ...(isMac ? [windowMenu] : []),
+    helpMenu,
+  ]
+
+  const menu = Menu.buildFromTemplate(template)
+  Menu.setApplicationMenu(menu)
+}
+
 app.whenReady().then(async () => {
+  // Set app name for macOS About panel and dock
+  app.setName('DJCheck')
+
   // Register all IPC handlers before creating the window
   registerAnalyzeHandlers()
   registerConvertHandlers()
   registerDialogHandlers()
 
   createWindow()
+  buildMenu()
 
   // Run preflight check and send result to renderer when it's ready
   const preflightResult = await runPreflight()

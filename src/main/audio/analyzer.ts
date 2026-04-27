@@ -123,8 +123,9 @@ export function parseWavHeader(buf: Buffer): WavHeaderInfo {
   let isExtensiblePcm = false
 
   if (isExtensible && buf.length >= 60) {
-    // WAVE_FORMAT_EXTENSIBLE subformat GUID is at offset 40 (bytes 40-55)
-    subFormatGuid = buf.slice(40, 56)
+    // WAVE_FORMAT_EXTENSIBLE subformat GUID is at offset 44
+    // Layout: WAVEFORMATEX(18) + cbSize(2) + validBits(2) + channelMask(4) = 26 bytes, then SubFormat(16)
+    subFormatGuid = buf.slice(44, 60)
     // Standard PCM GUID: {00000001-0000-0010-8000-00aa00389b71}
     const pcmGuid = Buffer.from([
       0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00,

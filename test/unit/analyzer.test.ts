@@ -64,28 +64,28 @@ function makeWavExtensibleBuffer(isFloatSubformat = false): Buffer {
   buf.writeUInt16LE(22, 36) // cbSize
   buf.writeUInt16LE(24, 38) // validBitsPerSample
   buf.writeUInt32LE(3, 40) // dwChannelMask (FL+FR)
-  // SubFormat GUID at offset 40 (within struct) = absolute offset 40+8=48?
-  // Actually fmt chunk starts at offset 12, data starts at 20, so subformat at 40
+  // SubFormat GUID at offset 44 (absolute)
+  // WAVEFORMATEX(18) + cbSize(2) + validBits(2) + channelMask(4) = 26 bytes, then SubFormat(16)
   if (isFloatSubformat) {
     // Float GUID: {00000003-0000-0010-8000-00aa00389b71}
-    buf[40] = 0x03; buf[41] = 0x00
-    buf[42] = 0x00; buf[43] = 0x00
-    buf[44] = 0x00; buf[45] = 0x00
-    buf[46] = 0x10; buf[47] = 0x00
-    buf[48] = 0x80; buf[49] = 0x00
-    buf[50] = 0x00; buf[51] = 0xaa
-    buf[52] = 0x00; buf[53] = 0x38
-    buf[54] = 0x9b; buf[55] = 0x71
+    buf[44] = 0x03; buf[45] = 0x00
+    buf[46] = 0x00; buf[47] = 0x00
+    buf[48] = 0x00; buf[49] = 0x00
+    buf[50] = 0x10; buf[51] = 0x00
+    buf[52] = 0x80; buf[53] = 0x00
+    buf[54] = 0x00; buf[55] = 0xaa
+    buf[56] = 0x00; buf[57] = 0x38
+    buf[58] = 0x9b; buf[59] = 0x71
   } else {
     // Standard PCM GUID: {00000001-0000-0010-8000-00aa00389b71}
-    buf[40] = 0x01; buf[41] = 0x00
-    buf[42] = 0x00; buf[43] = 0x00
-    buf[44] = 0x00; buf[45] = 0x00
-    buf[46] = 0x10; buf[47] = 0x00
-    buf[48] = 0x80; buf[49] = 0x00
-    buf[50] = 0x00; buf[51] = 0xaa
-    buf[52] = 0x00; buf[53] = 0x38
-    buf[54] = 0x9b; buf[55] = 0x71
+    buf[44] = 0x01; buf[45] = 0x00
+    buf[46] = 0x00; buf[47] = 0x00
+    buf[48] = 0x00; buf[49] = 0x00
+    buf[50] = 0x10; buf[51] = 0x00
+    buf[52] = 0x80; buf[53] = 0x00
+    buf[54] = 0x00; buf[55] = 0xaa
+    buf[56] = 0x00; buf[57] = 0x38
+    buf[58] = 0x9b; buf[59] = 0x71
   }
   return buf
 }
