@@ -46,19 +46,11 @@ jobs:
           iconutil -c icns build/icon.iconset -o build/icon.icns
           rm -rf build/icon.iconset
 
-      - name: Prepare macOS signing certificate
-        if: matrix.platform == 'mac'
-        run: |
-          echo "${{ secrets.CSC_LINK }}" | base64 --decode > /tmp/djcheck-cert.p12
-          echo "CSC_LINK_FILE=/tmp/djcheck-cert.p12" >> $GITHUB_ENV
-
       - name: Build & Package (${{ matrix.platform }})
         env:
-          CSC_LINK: ${{ matrix.platform == 'mac' && env.CSC_LINK_FILE || '' }}
-          CSC_KEY_PASSWORD: ${{ matrix.platform == 'mac' && secrets.CSC_KEY_PASSWORD || '' }}
-          APPLE_ID: ${{ matrix.platform == 'mac' && secrets.APPLE_ID || '' }}
-          APPLE_PASSWORD: ${{ matrix.platform == 'mac' && secrets.APPLE_PASSWORD || '' }}
-          APPLE_TEAM_ID: ${{ matrix.platform == 'mac' && secrets.APPLE_TEAM_ID || '' }}
+          # macOS code signing disabled for unsigned builds
+          # Set CSC_LINK, CSC_KEY_PASSWORD, APPLE_ID, APPLE_PASSWORD, APPLE_TEAM_ID in secrets to enable
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
         run: npm run package:${{ matrix.platform }}
 
       - name: Upload artifacts
