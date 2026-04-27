@@ -23,6 +23,7 @@ export default function Onboarding() {
     >
       {/* Logo */}
       <div className="mb-12 text-center">
+        <img src="./logo.png" alt="DJCheck" className="w-24 h-24 mx-auto mb-5 rounded-2xl" />
         <h1 className="font-cal text-5xl text-white tracking-tight mb-3">DJCheck</h1>
         <p className="text-base" style={{ color: 'var(--muted)' }}>
           Local CDJ audio compatibility checker — fast, private, open-source.
