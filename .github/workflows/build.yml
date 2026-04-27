@@ -29,6 +29,7 @@ jobs:
           cache: npm
 
       - name: Install dependencies
+        shell: bash
         run: |
           for i in 1 2 3; do
             npm ci && break || sleep 15
