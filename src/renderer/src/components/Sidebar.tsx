@@ -3,12 +3,12 @@ import { useStore, useTrackStats } from '../store'
 import PlayerSelector from './PlayerSelector'
 import type { CDJModel, OutputFormat } from '@shared/ipc-types'
 
-const OUTPUT_FORMATS: { id: OutputFormat; label: string; sublabel: string }[] = [
+const OUTPUT_FORMATS: { id: OutputFormat; label: string; sublabel: string; recommended?: boolean }[] = [
+  { id: 'mp3-320', label: 'MP3 320kbps', sublabel: 'Smallest files · Plays on everything · Recommended', recommended: true },
   { id: 'aiff-24', label: 'AIFF 24-bit', sublabel: 'Lossless · Full metadata · Universal' },
   { id: 'aiff-16', label: 'AIFF 16-bit', sublabel: 'Lossless · Dithered · Widest compat.' },
   { id: 'wav-24',  label: 'WAV 24-bit',  sublabel: 'Lossless · No CDJ artwork display' },
   { id: 'wav-16',  label: 'WAV 16-bit',  sublabel: 'Lossless · Dithered · Universal' },
-  { id: 'mp3-320', label: 'MP3 320kbps', sublabel: 'Lossy · Smallest · ID3v2.3 tags' },
 ]
 
 export default function Sidebar() {
@@ -71,7 +71,7 @@ export default function Sidebar() {
             className="text-xs rounded-lg p-3 mb-3 leading-relaxed animate-fade-in"
             style={{ background: 'var(--surface-2)', color: 'var(--muted)' }}
           >
-            <strong style={{ color: 'var(--text)' }}>AIFF 24-bit</strong> is recommended — lossless, supports metadata &amp; artwork, plays on every CDJ back to CDJ-900. MP3 sources always stay as MP3 regardless of this setting.
+            <strong style={{ color: 'var(--text)' }}>MP3 320kbps</strong> is recommended for most DJs — plays on every CDJ/XDJ ever made, tiny file sizes, and batch converts quickly. Choose <strong style={{ color: 'var(--text)' }}>AIFF 24-bit</strong> only if you need lossless quality. MP3 sources always stay as MP3 regardless of this setting.
           </div>
         )}
 
@@ -88,7 +88,12 @@ export default function Sidebar() {
                 cursor: 'pointer',
               }}
             >
-              <span className="text-xs font-medium text-white">{f.label}</span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-medium text-white">{f.label}</span>
+                {f.recommended && (
+                  <span className="pill pill-accent" style={{ fontSize: 9, padding: '1px 5px' }}>Rec</span>
+                )}
+              </div>
               <span className="text-xs" style={{ color: 'var(--muted)' }}>{f.sublabel}</span>
             </button>
           ))}

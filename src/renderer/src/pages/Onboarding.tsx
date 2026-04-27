@@ -4,16 +4,16 @@ import type { CDJModel } from '@shared/ipc-types'
 import { MODEL_LABELS, MODEL_DESCRIPTIONS } from '@shared/ipc-types'
 
 const MODELS: { id: CDJModel; year: string; badge?: string }[] = [
+  { id: 'all',          year: 'All models',   badge: 'Recommended' },
   { id: 'cdj-3000x',    year: '2024–present', badge: 'Newest' },
   { id: 'cdj-3000',     year: '2020–present', badge: 'Latest' },
-  { id: 'cdj-2000nxs2', year: '2017–present', badge: 'Most common' },
+  { id: 'cdj-2000nxs2', year: '2017–present' },
   { id: 'cdj-2000nxs',  year: '2014–2017' },
   { id: 'cdj-2000',     year: '2009–2014' },
-  { id: 'all',          year: 'All models',   badge: 'Safest' },
 ]
 
 export default function Onboarding() {
-  const [selected, setSelected] = useState<CDJModel>('cdj-2000nxs2')
+  const [selected, setSelected] = useState<CDJModel>('all')
   const { completeOnboarding } = useStore()
 
   return (

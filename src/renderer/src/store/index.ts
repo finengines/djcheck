@@ -87,8 +87,8 @@ export const useStore = create<AppState>()(
   immer((set, get) => ({
     // ─── Settings ─────────────────────────────────────────────────────────────
     settings: {
-      targetModel: 'cdj-2000nxs2',
-      outputFormat: 'aiff-24',
+      targetModel: 'all',
+      outputFormat: 'mp3-320',
       outputMode: 'subfolder',
       outputFolder: null,
       onboardingComplete: false,
