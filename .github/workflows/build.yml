@@ -46,11 +46,30 @@ jobs:
           iconutil -c icns build/icon.iconset -o build/icon.icns
           rm -rf build/icon.iconset
 
+      - name: Prepare macOS signing certificate
+        if: matrix.platform == 'mac'
+        run: |
+          CSC_LINK_RAW="${{ secrets.CSC_LINK }}"
+          if [ -n "$CSC_LINK_RAW" ]; then
+            # Try base64 decode first; if it fails, write raw
+            if echo "$CSC_LINK_RAW" | base64 --decode > /tmp/djcheck-cert.p12 2>/dev/null && [ -s /tmp/djcheck-cert.p12 ]; then
+              echo "Decoded certificate from base64 (size: $(wc -c < /tmp/djcheck-cert.p12))"
+            else
+              echo -n "$CSC_LINK_RAW" > /tmp/djcheck-cert.p12
+              echo "Wrote raw certificate (size: $(wc -c < /tmp/djcheck-cert.p12))"
+            fi
+            echo "CSC_LINK=/tmp/djcheck-cert.p12" >> $GITHUB_ENV
+          else
+            echo "No CSC_LINK secret found, skipping signing"
+            echo "CSC_IDENTITY_AUTO_DISCOVERY=false" >> $GITHUB_ENV
+          fi
+
       - name: Build & Package (${{ matrix.platform }})
         env:
-          # macOS code signing disabled for unsigned builds
-          # Set CSC_LINK, CSC_KEY_PASSWORD, APPLE_ID, APPLE_PASSWORD, APPLE_TEAM_ID in secrets to enable
-          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+          CSC_KEY_PASSWORD: ${{ matrix.platform == 'mac' && secrets.CSC_KEY_PASSWORD || '' }}
+          APPLE_ID: ${{ matrix.platform == 'mac' && secrets.APPLE_ID || '' }}
+          APPLE_PASSWORD: ${{ matrix.platform == 'mac' && secrets.APPLE_PASSWORD || '' }}
+          APPLE_TEAM_ID: ${{ matrix.platform == 'mac' && secrets.APPLE_TEAM_ID || '' }}
         run: npm run package:${{ matrix.platform }}
 
       - name: Upload artifacts

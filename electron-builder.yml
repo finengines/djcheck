@@ -23,6 +23,10 @@ mac:
   entitlements: build/entitlements.mac.plist
   entitlementsInherit: build/entitlements.mac.plist
   gatekeeperAssess: false
+  notarize:
+    teamId: "${env:APPLE_TEAM_ID}"
+    appleId: "${env:APPLE_ID}"
+    appleIdPassword: "${env:APPLE_PASSWORD}"
 
 win:
   target:
