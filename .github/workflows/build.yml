@@ -47,10 +47,13 @@ jobs:
           rm -rf build/icon.iconset
 
       - name: Decode macOS signing certificate
-        if: matrix.platform == 'mac' && secrets.CSC_LINK != ''
+        if: matrix.platform == 'mac'
         run: |
-          echo "${{ secrets.CSC_LINK }}" | base64 --decode > /tmp/djcheck-cert.p12
-          echo "CSC_LINK=/tmp/djcheck-cert.p12" >> $GITHUB_ENV
+          CSC_RAW="${{ secrets.CSC_LINK }}"
+          if [ -n "$CSC_RAW" ]; then
+            echo "$CSC_RAW" | base64 --decode > /tmp/djcheck-cert.p12
+            echo "CSC_LINK=/tmp/djcheck-cert.p12" >> $GITHUB_ENV
+          fi
 
       - name: Build & Package (${{ matrix.platform }})
         env:
