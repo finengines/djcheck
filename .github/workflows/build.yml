@@ -46,46 +46,18 @@ jobs:
           iconutil -c icns build/icon.iconset -o build/icon.icns
           rm -rf build/icon.iconset
 
-      - name: Prepare macOS signing certificate
-        if: matrix.platform == 'mac'
+      - name: Decode macOS signing certificate
+        if: matrix.platform == 'mac' && secrets.CSC_LINK != ''
         run: |
-          CSC_LINK_RAW="${{ secrets.CSC_LINK }}"
-          if [ -z "$CSC_LINK_RAW" ]; then
-            echo "⚠️  No CSC_LINK secret found, skipping signing"
-            echo "CSC_IDENTITY_AUTO_DISCOVERY=false" >> $GITHUB_ENV
-            exit 0
-          fi
-
-          echo "$CSC_LINK_RAW" | base64 --decode > /tmp/djcheck-cert.p12 2>/dev/null
-
-          echo "Certificate file size: $(wc -c < /tmp/djcheck-cert.p12) bytes"
-          echo "Certificate file header (hex):" && xxd -l 16 /tmp/djcheck-cert.p12
-
-          # Validate it's a PKCS12 file with openssl
-          CERT_PASSWORD="${{ secrets.CSC_KEY_PASSWORD }}"
-          if openssl pkcs12 -info -in /tmp/djcheck-cert.p12 -passin "pass:$CERT_PASSWORD" -noout 2>/dev/null; then
-            echo "✅ Valid PKCS12 certificate"
-            echo "CSC_LINK=/tmp/djcheck-cert.p12" >> $GITHUB_ENV
-          else
-            echo "❌ Invalid PKCS12 format. Trying alternative decode methods..."
-            # Try without stripping newlines (some secrets have wrapping)
-            echo "$CSC_LINK_RAW" | tr -d '\n' | base64 --decode > /tmp/djcheck-cert.p12 2>/dev/null
-            if openssl pkcs12 -info -in /tmp/djcheck-cert.p12 -passin "pass:$CERT_PASSWORD" -noout 2>/dev/null; then
-              echo "✅ Valid PKCS12 after stripping newlines"
-              echo "CSC_LINK=/tmp/djcheck-cert.p12" >> $GITHUB_ENV
-            else
-              echo "❌ Could not parse certificate. Skipping code signing."
-              echo "CSC_IDENTITY_AUTO_DISCOVERY=false" >> $GITHUB_ENV
-              rm -f /tmp/djcheck-cert.p12
-            fi
-          fi
+          echo "${{ secrets.CSC_LINK }}" | base64 --decode > /tmp/djcheck-cert.p12
+          echo "CSC_LINK=/tmp/djcheck-cert.p12" >> $GITHUB_ENV
 
       - name: Build & Package (${{ matrix.platform }})
         env:
-          CSC_KEY_PASSWORD: ${{ matrix.platform == 'mac' && secrets.CSC_KEY_PASSWORD || '' }}
-          APPLE_ID: ${{ matrix.platform == 'mac' && secrets.APPLE_ID || '' }}
-          APPLE_PASSWORD: ${{ matrix.platform == 'mac' && secrets.APPLE_PASSWORD || '' }}
-          APPLE_TEAM_ID: ${{ matrix.platform == 'mac' && secrets.APPLE_TEAM_ID || '' }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: npm run package:${{ matrix.platform }}
 
       - name: Upload artifacts
@@ -122,3 +94,4 @@ jobs:
           generate_release_notes: true
           draft: false
           prerelease: ${{ contains(github.ref, 'beta') || contains(github.ref, 'alpha') }}
+          allow_updates: true
