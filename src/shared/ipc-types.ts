@@ -1,8 +1,9 @@
 export type CDJModel =
   | 'cdj-2000'      // CDJ-2000, CDJ-900, CDJ-850, CDJ-400, CDJ-350 — oldest
   | 'cdj-2000nxs'   // CDJ-2000NXS, XDJ-1000 — 44.1/48kHz, no FLAC/ALAC
-  | 'cdj-2000nxs2'  // CDJ-2000NXS2, XDJ-1000MK2 — ALAC yes, FLAC no
-  | 'cdj-3000'      // CDJ-3000 — FLAC fw1.20+, ALAC, strictest MP3
+  | 'cdj-2000nxs2'  // CDJ-2000NXS2, XDJ-1000MK2 — FLAC, ALAC, 96kHz
+  | 'cdj-3000'      // CDJ-3000 — FLAC, ALAC, strictest MP3
+  | 'cdj-3000x'     // CDJ-3000X — FLAC, ALAC, exFAT, 96kHz
   | 'all'           // All CDJs: most restrictive rules (widest compatibility)
 
 export type AudioFormat = 'wav' | 'aiff' | 'mp3' | 'aac' | 'alac' | 'flac' | 'ogg' | 'unknown'
@@ -130,15 +131,17 @@ export interface AppSettings {
 export const MODEL_LABELS: Record<CDJModel, string> = {
   'cdj-2000': 'CDJ-2000 / CDJ-900 / CDJ-850',
   'cdj-2000nxs': 'CDJ-2000NXS / XDJ-1000',
-  'cdj-2000nxs2': 'CDJ-2000NXS2 / XDJ-1000MK2',
-  'cdj-3000': 'CDJ-3000 / CDJ-3000X',
+  'cdj-2000nxs2': 'CDJ-2000NXS2',
+  'cdj-3000': 'CDJ-3000',
+  'cdj-3000x': 'CDJ-3000X',
   'all': 'All CDJs (widest compatibility)',
 }
 
 export const MODEL_DESCRIPTIONS: Record<CDJModel, string> = {
   'cdj-2000': '44.1/48kHz WAV & AIFF only. No FLAC or ALAC.',
   'cdj-2000nxs': '44.1/48kHz WAV & AIFF only. No FLAC or ALAC.',
-  'cdj-2000nxs2': 'Up to 96kHz. ALAC supported. No FLAC.',
-  'cdj-3000': 'Up to 96kHz. FLAC (fw 1.20+) & ALAC supported. Strictest MP3 validation.',
+  'cdj-2000nxs2': 'Up to 96kHz. FLAC & ALAC supported.',
+  'cdj-3000': 'Up to 96kHz. FLAC & ALAC supported. Strictest MP3 validation.',
+  'cdj-3000x': 'Up to 96kHz. FLAC, ALAC, exFAT. Same audio specs as CDJ-3000.',
   'all': 'Checks against all CDJ models. Most restrictive rules ensure tracks play everywhere.',
 }

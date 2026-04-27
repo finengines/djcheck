@@ -557,11 +557,10 @@ describe('MP3 compatibility checks', () => {
 // ─── FLAC tests ───────────────────────────────────────────────────────────────
 
 describe('FLAC compatibility checks', () => {
-  it('flags FLAC_UNSUPPORTED on cdj-2000nxs2 (no FLAC support)', () => {
+  it('does NOT flag FLAC on cdj-2000nxs2 (FLAC is supported)', () => {
     const issues: AudioIssue[] = []
     checkFlac(44100, 24, MODEL_CAPS['cdj-2000nxs2'], issues)
-    expect(issues.map(i => i.id)).toContain('FLAC_UNSUPPORTED')
-    expect(issues.find(i => i.id === 'FLAC_UNSUPPORTED')?.isLossless).toBe(true)
+    expect(issues.map(i => i.id)).not.toContain('FLAC_UNSUPPORTED')
   })
 
   it('flags FLAC_UNSUPPORTED on cdj-2000 (no FLAC support)', () => {
@@ -582,9 +581,15 @@ describe('FLAC compatibility checks', () => {
     expect(issues.map(i => i.id)).not.toContain('FLAC_UNSUPPORTED')
   })
 
-  it('flags FLAC_SAMPLE_RATE_HIGH on cdj-3000 at 96kHz (FLAC limited to 48kHz even on 3000)', () => {
+  it('does NOT flag FLAC_SAMPLE_RATE_HIGH on cdj-3000 at 96kHz (CDJ-3000 supports FLAC up to 96kHz)', () => {
     const issues: AudioIssue[] = []
     checkFlac(96000, 24, MODEL_CAPS['cdj-3000'], issues)
+    expect(issues.map(i => i.id)).not.toContain('FLAC_SAMPLE_RATE_HIGH')
+  })
+
+  it('flags FLAC_SAMPLE_RATE_HIGH on cdj-3000 at 192kHz (exceeds 96kHz max)', () => {
+    const issues: AudioIssue[] = []
+    checkFlac(192000, 24, MODEL_CAPS['cdj-3000'], issues)
     expect(issues.map(i => i.id)).toContain('FLAC_SAMPLE_RATE_HIGH')
   })
 })
@@ -649,9 +654,22 @@ describe('MODEL_CAPS', () => {
     expect(MODEL_CAPS['cdj-2000'].maxSampleRate).toBe(48000)
   })
 
+  it('cdj-2000nxs2 supports FLAC and ALAC', () => {
+    expect(MODEL_CAPS['cdj-2000nxs2'].supportsFlac).toBe(true)
+    expect(MODEL_CAPS['cdj-2000nxs2'].supportsAlac).toBe(true)
+    expect(MODEL_CAPS['cdj-2000nxs2'].maxSampleRate).toBe(96000)
+  })
+
   it('cdj-3000 supports FLAC and has strict MP3', () => {
     expect(MODEL_CAPS['cdj-3000'].supportsFlac).toBe(true)
     expect(MODEL_CAPS['cdj-3000'].strictMp3).toBe(true)
+  })
+
+  it('cdj-3000x matches cdj-3000 audio capabilities', () => {
+    expect(MODEL_CAPS['cdj-3000x'].supportsFlac).toBe(true)
+    expect(MODEL_CAPS['cdj-3000x'].supportsAlac).toBe(true)
+    expect(MODEL_CAPS['cdj-3000x'].strictMp3).toBe(true)
+    expect(MODEL_CAPS['cdj-3000x'].maxSampleRate).toBe(96000)
   })
 
   it('all mode applies strictest rules', () => {

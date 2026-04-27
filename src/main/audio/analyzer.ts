@@ -29,11 +29,18 @@ export const MODEL_CAPS: Record<CDJModel, ModelCaps> = {
   'cdj-2000nxs2': {
     maxSampleRate: 96000,
     minSupportedSampleRates: [44100, 48000, 88200, 96000],
-    supportsFlac: false,
+    supportsFlac: true,
     supportsAlac: true,
     strictMp3: false,
   },
   'cdj-3000': {
+    maxSampleRate: 96000,
+    minSupportedSampleRates: [44100, 48000, 88200, 96000],
+    supportsFlac: true,
+    supportsAlac: true,
+    strictMp3: true,
+  },
+  'cdj-3000x': {
     maxSampleRate: 96000,
     minSupportedSampleRates: [44100, 48000, 88200, 96000],
     supportsFlac: true,
@@ -651,7 +658,7 @@ export function checkM4a(
 
   if (isAlac && !caps.supportsAlac) {
     issues.push(issue('E-8305', 'ALAC_UNSUPPORTED',
-      'Apple Lossless (ALAC) in .m4a container — not supported on this CDJ model. Must be converted to AIFF or WAV (lossless quality preserved).',
+      'Apple Lossless (ALAC) in .m4a container — not supported on this CDJ model. Supported on CDJ-2000NXS2, CDJ-3000, and CDJ-3000X. Must be converted to AIFF or WAV (lossless quality preserved).',
       true, true))
   }
 }
@@ -666,15 +673,15 @@ export function checkFlac(
 ): void {
   if (!caps.supportsFlac) {
     issues.push(issue('E-8305', 'FLAC_UNSUPPORTED',
-      'FLAC is only supported on CDJ-3000 / CDJ-TOUR1 with firmware 1.20 or later. This CDJ model cannot play FLAC files. Must be converted to AIFF or WAV (lossless quality preserved).',
+      'FLAC is not supported on this CDJ model. Supported on CDJ-2000NXS2, CDJ-3000, and CDJ-3000X (CDJ-3000 requires firmware 1.20+). Must be converted to AIFF or WAV (lossless quality preserved).',
       true, true))
     return
   }
 
-  // Even on CDJ-3000, FLAC is limited to 44.1/48 kHz
-  if (sampleRate !== null && sampleRate > 48000) {
+  // FLAC sample rate check — CDJ-3000 and NXS2 support up to 96kHz, older models don't support FLAC at all
+  if (sampleRate !== null && sampleRate > caps.maxSampleRate) {
     issues.push(issue('E-8305', 'FLAC_SAMPLE_RATE_HIGH',
-      `FLAC at ${(sampleRate / 1000).toFixed(1)} kHz — even CDJ-3000 only supports FLAC at 44.1/48 kHz. Must be resampled or converted.`,
+      `FLAC at ${(sampleRate / 1000).toFixed(1)} kHz exceeds this CDJ's maximum (${(caps.maxSampleRate / 1000).toFixed(1)} kHz). Must be resampled or converted.`,
       true, false))
   }
 

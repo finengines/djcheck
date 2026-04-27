@@ -7,7 +7,7 @@ DJCheck is a desktop app that analyses your audio files (WAV, AIFF, MP3, FLAC, A
 ## Features
 
 - **Instant compatibility scanning** — drag & drop files or folders, get results in seconds
-- **Multiple CDJ models** — checks against CDJ-2000, CDJ-2000NXS, CDJ-2000NXS2, CDJ-3000, or "All CDJs" for maximum compatibility
+- **Multiple CDJ models** — checks against CDJ-2000, CDJ-2000NXS, CDJ-2000NXS2, CDJ-3000, CDJ-3000X, or "All CDJs" for maximum compatibility
 - **One-click auto-fix** — converts files to CDJ-compatible formats using ffmpeg with metadata preservation
 - **Lossless header patches** — WAV extensible header issues fixed with a 2-byte patch (no re-encoding!)
 - **MP3 passthrough** — MP3 sources stay as MP3, never wastefully transcoded to lossless
@@ -18,13 +18,14 @@ DJCheck is a desktop app that analyses your audio files (WAV, AIFF, MP3, FLAC, A
 
 ## Supported CDJ Models
 
-| Model | Max Sample Rate | FLAC | ALAC | Notes |
-|-------|----------------|------|------|-------|
-| CDJ-2000 / CDJ-900 / CDJ-850 / CDJ-400 / CDJ-350 | 48 kHz | ✗ | ✗ | Most restrictive |
+| Model | WAV/AIFF Max | FLAC | ALAC | Notes |
+|-------|-------------|------|------|-------|
+| CDJ-2000 / CDJ-900 / CDJ-850 | 48 kHz | ✗ | ✗ | Oldest supported models |
 | CDJ-2000NXS / XDJ-1000 | 48 kHz | ✗ | ✗ | |
-| CDJ-2000NXS2 / XDJ-1000MK2 | 96 kHz | ✗ | ✓ | ALAC supported |
-| CDJ-3000 / CDJ-3000X | 96 kHz | ✓ | ✓ | FLAC from fw 1.20+ |
-| All CDJs (widest compatibility) | 48 kHz | ✗ | ✗ | Most restrictive rules |
+| CDJ-2000NXS2 | 96 kHz | ✓ | ✓ | Hi-res + FLAC + ALAC (all up to 96kHz/24-bit) |
+| CDJ-3000 | 96 kHz | ✓ | ✓ | FLAC requires firmware 1.20+. Strictest MP3 decoder |
+| CDJ-3000X | 96 kHz | ✓ | ✓ | CDJ-3000 successor. Adds exFAT support (removes FAT32 4GB limit) |
+| All CDJs (widest compatibility) | 48 kHz | ✗ | ✗ | Most restrictive rules — ensures tracks play on any CDJ |
 
 ## Compatibility Checks
 
@@ -73,8 +74,8 @@ DJCheck performs the following checks on your audio files:
 ### FLAC / AAC / ALAC / OGG
 | Check | Code | Severity | Auto-fix | Description |
 |-------|------|----------|----------|-------------|
-| FLAC unsupported (non-CDJ-3000) | E-8305 | Error | ✓ | Convert to AIFF/WAV |
-| FLAC high sample rate | E-8305 | Error | ✓ | CDJ-3000 FLAC limited to 44.1/48 kHz |
+| FLAC unsupported (CDJ-2000/NXS) | E-8305 | Error | ✓ | Supported on CDJ-2000NXS2, CDJ-3000, CDJ-3000X only |
+| FLAC high sample rate | E-8305 | Error | ✓ | Must be within model’s max (96kHz for NXS2/3000/3000X) |
 | ALAC unsupported (pre-NXS2) | E-8305 | Error | ✓ | |
 | DRM-protected AAC (.m4p) | E-8305 | Error | ✗ | |
 | OGG Vorbis | UNSUPPORTED | Error | ✓ | No CDJ support |

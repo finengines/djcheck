@@ -4,6 +4,7 @@ import type { CDJModel } from '@shared/ipc-types'
 import { MODEL_LABELS, MODEL_DESCRIPTIONS } from '@shared/ipc-types'
 
 const MODELS: { id: CDJModel; year: string; badge?: string }[] = [
+  { id: 'cdj-3000x',    year: '2024–present', badge: 'Newest' },
   { id: 'cdj-3000',     year: '2020–present', badge: 'Latest' },
   { id: 'cdj-2000nxs2', year: '2017–present', badge: 'Most common' },
   { id: 'cdj-2000nxs',  year: '2014–2017' },

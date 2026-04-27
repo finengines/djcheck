@@ -1,8 +1,21 @@
 {
   "name": "djcheck",
-  "version": "0.1.0",
-  "description": "Local DJ audio compatibility checker for Pioneer CDJ/XDJ players",
-  "private": true,
+  "version": "1.0.0-beta.1",
+  "description": "Scan your DJ music library for Pioneer CDJ compatibility issues and fix them automatically",
+  "author": {
+    "name": "Fin Engines",
+    "url": "https://github.com/finengines"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/finengines/djcheck",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/finengines/djcheck.git"
+  },
+  "bugs": {
+    "url": "https://github.com/finengines/djcheck/issues"
+  },
+  "private": false,
   "main": "./out/main/index.js",
   "scripts": {
     "dev": "electron-vite dev",

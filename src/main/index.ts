@@ -55,7 +55,7 @@ function buildMenu(): void {
     submenu: [
       { label: 'About DJCheck', click: () => { dialog.showMessageBox({ type: 'info', title: 'About DJCheck', message: 'DJCheck', detail: `Version ${app.getVersion()}\n\nPioneer CDJ Audio File Compatibility Checker\n\nChecks your audio files against Pioneer CDJ player specifications and auto-fixes issues.`, buttons: ['OK'] }) } },
       { type: 'separator' },
-      { label: 'Preferences…', accelerator: 'Cmd+,', click: () => { /* TODO: open settings */ } },
+      { label: 'Preferences…', accelerator: 'Cmd+,', click: () => { /* settings UI coming in a future release */ } },
       { type: 'separator' },
       { role: 'hide' },
       { role: 'hideOthers' },
