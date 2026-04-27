@@ -29,7 +29,10 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          for i in 1 2 3; do
+            npm ci && break || sleep 15
+          done
 
       - name: Generate macOS icon (.icns)
         if: matrix.platform == 'mac'
