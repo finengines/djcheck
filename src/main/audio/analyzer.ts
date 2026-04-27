@@ -99,19 +99,45 @@ export interface WavHeaderInfo {
   isExtensible: boolean
   subFormatGuid: Buffer | null
   isExtensiblePcm: boolean // subformat is standard PCM — in-place patch safe
+  isRf64: boolean // RF64 format (WAV >4GB) — not supported by any CDJ
+  hasBextChunk: boolean // Broadcast WAV extension — may cause issues on older CDJ-2000
+  id3v2MajorVersion: number | null // ID3v2 tag version if present in WAV/AIFF
 }
 
 export function parseWavHeader(buf: Buffer): WavHeaderInfo {
   const invalid: WavHeaderInfo = {
     valid: false, formatTag: 0, channels: 0, sampleRate: 0,
     bitDepth: 0, isExtensible: false, subFormatGuid: null, isExtensiblePcm: false,
+    isRf64: false, hasBextChunk: false, id3v2MajorVersion: null,
   }
 
   if (buf.length < 44) return invalid
 
   const riff = buf.slice(0, 4).toString('ascii')
   const wave = buf.slice(8, 12).toString('ascii')
-  if (riff !== 'RIFF' || wave !== 'WAVE') return invalid
+
+  // RF64 check — RF64 is the extended RIFF format for files >4GB
+  const isRf64 = riff === 'RF64'
+  if (!isRf64 && riff !== 'RIFF') return invalid
+  if (wave !== 'WAVE') return invalid
+
+  // Scan for BWF 'bext' chunk (Broadcast WAV Format)
+  let hasBextChunk = false
+  let id3v2MajorVersion: number | null = null
+  let scanOffset = 12
+  while (scanOffset + 8 <= buf.length) {
+    const chunkId = buf.slice(scanOffset, scanOffset + 4).toString('ascii')
+    const chunkSize = buf.readUInt32LE(scanOffset + 4)
+    if (chunkId === 'bext') {
+      hasBextChunk = true
+    }
+    // ID3v2 chunk in WAV (non-standard but common)
+    if (chunkId === 'id3 ' && scanOffset + 10 <= buf.length) {
+      id3v2MajorVersion = buf[scanOffset + 8 + 3] // after 'id3 ' header(8) + 'ID3'(3)
+    }
+    if (chunkSize === 0) break
+    scanOffset += 8 + chunkSize + (chunkSize % 2) // chunks are word-aligned
+  }
 
   const formatTag = buf.readUInt16LE(20)
   const channels = buf.readUInt16LE(22)
@@ -134,19 +160,34 @@ export function parseWavHeader(buf: Buffer): WavHeaderInfo {
     isExtensiblePcm = subFormatGuid.equals(pcmGuid)
   }
 
-  return { valid: true, formatTag, channels, sampleRate, bitDepth, isExtensible, subFormatGuid, isExtensiblePcm }
+  return { valid: true, formatTag, channels, sampleRate, bitDepth, isExtensible, subFormatGuid, isExtensiblePcm, isRf64, hasBextChunk, id3v2MajorVersion }
 }
 
 export function checkWav(
   header: WavHeaderInfo,
   caps: ModelCaps,
-  issues: AudioIssue[]
+  issues: AudioIssue[],
+  fileSize?: number
 ): void {
+  // RF64 — extended WAV format for files >4GB, not supported by any CDJ
+  if (header.isRf64) {
+    issues.push(issue('E-8304', 'WAV_RF64',
+      'RF64 format (extended WAV for files >4GB) — no Pioneer CDJ supports RF64. Must be split or re-encoded as standard WAV.',
+      false, false))
+  }
+
   if (!header.valid) {
     issues.push(issue('E-8304', 'WAV_CORRUPT_HEADER',
       'WAV file has a corrupted RIFF/WAVE header — CDJ cannot decode this file.',
       true, false))
     return
+  }
+
+  // Broadcast WAV (BWF) — 'bext' chunk may cause issues on older CDJ-2000 firmware
+  if (header.hasBextChunk) {
+    issues.push(issue('WARNING', 'WAV_BWF',
+      'Broadcast WAV (BWF) with bext metadata chunk — most CDJs handle this, but older CDJ-2000 firmware may fail to load the file.',
+      true, false, 'warning'))
   }
 
   if (header.formatTag === 0x0003) {
@@ -197,6 +238,13 @@ export function checkWav(
     issues.push(issue('E-8305', 'WAV_BIT_DEPTH_32INT',
       '32-bit integer WAV — CDJs require 16-bit or 24-bit. Must be re-encoded.',
       true, false))
+  }
+
+  // Large file warning — FAT32 USB drives (common for DJ use) have a 4GB limit
+  if (fileSize !== undefined && fileSize > 2 * 1024 * 1024 * 1024) {
+    issues.push(issue('WARNING', 'WAV_FILE_TOO_LARGE',
+      `WAV file is ${(fileSize / (1024 * 1024 * 1024)).toFixed(1)} GB — FAT32 USB drives (standard for DJ) have a 4 GB limit. This file may not copy to USB.`,
+      false, false, 'warning'))
   }
 }
 
@@ -284,7 +332,8 @@ function readIeee80(buf: Buffer, offset: number): number {
 export function checkAiff(
   header: AiffHeaderInfo,
   caps: ModelCaps,
-  issues: AudioIssue[]
+  issues: AudioIssue[],
+  fileSize?: number
 ): void {
   if (!header.valid) {
     issues.push(issue('E-8302', 'AIFF_CORRUPT_HEADER',
@@ -301,8 +350,7 @@ export function checkAiff(
 
   if (header.isAifc && header.compressionType) {
     const ct = header.compressionType.trim()
-    const unsupportedCodecs = ['ALAW', 'alaw', 'ulaw', 'ULAW', 'ima4', 'IMA4', 'NONE', 'none']
-    // NONE is technically uncompressed in old AIFC files but some CDJs reject AIFC containers
+    // Compressed codecs that CDJs definitely cannot play
     const compressed = ['ALAW', 'alaw', 'ulaw', 'ULAW', 'ima4', 'IMA4']
     if (compressed.includes(ct)) {
       issues.push(issue('E-8304', 'AIFF_COMPRESSED',
@@ -313,6 +361,18 @@ export function checkAiff(
         `Unknown AIFF-C compression type "${ct}" — CDJ compatibility unknown. Re-encoding to standard AIFF recommended.`,
         true, false))
     }
+
+    // AIFC container warning — some CDJs reject AIFC entirely even with uncompressed PCM
+    if (!compressed.includes(ct)) {
+      issues.push(issue('WARNING', 'AIFF_AIFC_CONTAINER',
+        `AIFC container (compression: "${ct}") — some CDJ models reject AIFC files even with uncompressed PCM data. Converting to standard AIFF is safest.`,
+        true, false, 'warning'))
+    }
+  } else if (header.isAifc) {
+    // AIFC with no compression type info
+    issues.push(issue('WARNING', 'AIFF_AIFC_CONTAINER',
+      'AIFC container — some CDJ models reject AIFC files even with uncompressed PCM. Converting to standard AIFF is safest.',
+      true, false, 'warning'))
   }
 
   if (header.sampleRate !== null) {
@@ -350,6 +410,13 @@ export function checkAiff(
         true, false, 'warning'))
     }
   }
+
+  // Large file warning — FAT32 USB drives have a 4GB limit
+  if (fileSize !== undefined && fileSize > 2 * 1024 * 1024 * 1024) {
+    issues.push(issue('WARNING', 'AIFF_FILE_TOO_LARGE',
+      `AIFF file is ${(fileSize / (1024 * 1024 * 1024)).toFixed(1)} GB — FAT32 USB drives (standard for DJ) have a 4 GB limit. This file may not copy to USB.`,
+      false, false, 'warning'))
+  }
 }
 
 // ─── MP3 binary checks ───────────────────────────────────────────────────────
@@ -364,6 +431,8 @@ export interface Mp3HeaderInfo {
   isVbr: boolean
   hasXingHeader: boolean
   hasCorruptFrames: boolean
+  id3v2MajorVersion: number | null // ID3v2 major version (3 = v2.3, 4 = v2.4)
+  hasId3v1: boolean // has ID3v1 tag at end of file
 }
 
 // MPEG bitrate lookup [version][layer][index]
@@ -382,13 +451,22 @@ const MPEG_SAMPLE_RATES: Record<number, number[]> = {
 }
 
 export function parseMp3Header(buf: Buffer, len: number): Mp3HeaderInfo | null {
-  // Skip ID3v2 tag if present
+  // Skip ID3v2 tag if present, capture version
   let start = 0
+  let id3v2MajorVersion: number | null = null
   if (len >= 10 && buf.slice(0, 3).toString('ascii') === 'ID3') {
+    id3v2MajorVersion = buf[3] // 3 = v2.3, 4 = v2.4
     const tagSize =
       ((buf[6] & 0x7f) << 21) | ((buf[7] & 0x7f) << 14) |
       ((buf[8] & 0x7f) << 7)  |  (buf[9] & 0x7f)
     start = 10 + tagSize
+  }
+
+  // Check for ID3v1 tag at end of file (last 128 bytes, starts with 'TAG')
+  let hasId3v1 = false
+  if (len >= 128) {
+    const v1Offset = len - 128
+    hasId3v1 = buf.slice(v1Offset, v1Offset + 3).toString('ascii') === 'TAG'
   }
 
   // Find first valid frame sync
@@ -449,6 +527,7 @@ export function parseMp3Header(buf: Buffer, len: number): Mp3HeaderInfo | null {
   return {
     frameOffset, mpegVersion, layer, sampleRate, bitrate,
     channelMode, isVbr, hasXingHeader, hasCorruptFrames,
+    id3v2MajorVersion, hasId3v1,
   }
 }
 
@@ -538,6 +617,20 @@ export function checkMp3(
     issues.push(issue('E-8306', 'MP3_VBR_NO_XING',
       'VBR MP3 is missing a Xing/LAME header. CDJs and rekordbox calculate different track lengths without it — hot cue seek points may be wrong.',
       true, true))
+  }
+
+  // ID3v2.4 tags — CDJ-3000 and rekordbox prefer ID3v2.3
+  if (mp3.id3v2MajorVersion !== null && mp3.id3v2MajorVersion >= 4) {
+    issues.push(issue('WARNING', 'MP3_ID3V24',
+      'ID3v2.4 tag detected — CDJ-3000 and rekordbox prefer ID3v2.3. Metadata (title, artist, etc.) may not display correctly.',
+      true, false, 'warning'))
+  }
+
+  // ID3v1 only (no ID3v2) — older tag format may cause metadata issues
+  if (mp3.hasId3v1 && mp3.id3v2MajorVersion === null) {
+    issues.push(issue('WARNING', 'MP3_ID3V1_ONLY',
+      'Only ID3v1 tag found (no ID3v2) — ID3v1 has limited field support. Some CDJ metadata features (album art, key, etc.) will be unavailable.',
+      false, false, 'warning'))
   }
 }
 
@@ -675,14 +768,14 @@ export async function analyzeFile(
       bitDepth = header.bitDepth || null
       channels = header.channels || null
       codec = header.valid ? 'PCM' : null
-      checkWav(header, caps, issues)
+      checkWav(header, caps, issues, fileSize)
     } else if (format === 'aiff') {
       const header = parseAiffHeader(buf, bytesRead)
       sampleRate = header.sampleRate
       bitDepth = header.bitDepth
       channels = header.channels
       codec = header.isAifc ? `AIFF-C/${header.compressionType ?? 'unknown'}` : 'PCM'
-      checkAiff(header, caps, issues)
+      checkAiff(header, caps, issues, fileSize)
     } else if (format === 'mp3') {
       const mp3 = parseMp3Header(buf, bytesRead)
       if (mp3) {
@@ -720,6 +813,13 @@ export async function analyzeFile(
       const isAlac = buf.slice(0, bytesRead).toString('binary').includes('alac')
       if (isAlac) codec = 'ALAC'
       checkM4a(filePath, isAlac, caps, issues)
+    }
+
+    // Large file check for MP3 and other formats (WAV/AIFF handled in their check functions)
+    if (fileSize > 2 * 1024 * 1024 * 1024 && (format === 'mp3' || format === 'aac' || format === 'flac')) {
+      issues.push(issue('WARNING', 'FILE_TOO_LARGE',
+        `File is ${(fileSize / (1024 * 1024 * 1024)).toFixed(1)} GB — FAT32 USB drives (standard for DJ) have a 4 GB limit. This file may not copy to USB.`,
+        false, false, 'warning'))
     }
 
     // Artwork check — scan for PNG magic bytes in first 64KB of metadata
