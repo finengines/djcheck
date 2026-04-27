@@ -62,14 +62,15 @@ jobs:
           echo "Certificate file header (hex):" && xxd -l 16 /tmp/djcheck-cert.p12
 
           # Validate it's a PKCS12 file with openssl
-          if openssl pkcs12 -info -in /tmp/djcheck-cert.p12 -passin "pass:${{ secrets.CSC_KEY_PASSWORD }}" -noout 2>/dev/null; then
+          CERT_PASSWORD="${{ secrets.CSC_KEY_PASSWORD }}"
+          if openssl pkcs12 -info -in /tmp/djcheck-cert.p12 -passin "pass:$CERT_PASSWORD" -noout 2>/dev/null; then
             echo "✅ Valid PKCS12 certificate"
             echo "CSC_LINK=/tmp/djcheck-cert.p12" >> $GITHUB_ENV
           else
             echo "❌ Invalid PKCS12 format. Trying alternative decode methods..."
             # Try without stripping newlines (some secrets have wrapping)
             echo "$CSC_LINK_RAW" | tr -d '\n' | base64 --decode > /tmp/djcheck-cert.p12 2>/dev/null
-            if openssl pkcs12 -info -in /tmp/djcheck-cert.p12 -passin "pass:${{ secrets.CSC_KEY_PASSWORD }}" -noout 2>/dev/null; then
+            if openssl pkcs12 -info -in /tmp/djcheck-cert.p12 -passin "pass:$CERT_PASSWORD" -noout 2>/dev/null; then
               echo "✅ Valid PKCS12 after stripping newlines"
               echo "CSC_LINK=/tmp/djcheck-cert.p12" >> $GITHUB_ENV
             else
