@@ -50,18 +50,33 @@ jobs:
         if: matrix.platform == 'mac'
         run: |
           CSC_LINK_RAW="${{ secrets.CSC_LINK }}"
-          if [ -n "$CSC_LINK_RAW" ]; then
-            # Try base64 decode first; if it fails, write raw
-            if echo "$CSC_LINK_RAW" | base64 --decode > /tmp/djcheck-cert.p12 2>/dev/null && [ -s /tmp/djcheck-cert.p12 ]; then
-              echo "Decoded certificate from base64 (size: $(wc -c < /tmp/djcheck-cert.p12))"
-            else
-              echo -n "$CSC_LINK_RAW" > /tmp/djcheck-cert.p12
-              echo "Wrote raw certificate (size: $(wc -c < /tmp/djcheck-cert.p12))"
-            fi
+          if [ -z "$CSC_LINK_RAW" ]; then
+            echo "⚠️  No CSC_LINK secret found, skipping signing"
+            echo "CSC_IDENTITY_AUTO_DISCOVERY=false" >> $GITHUB_ENV
+            exit 0
+          fi
+
+          echo "$CSC_LINK_RAW" | base64 --decode > /tmp/djcheck-cert.p12 2>/dev/null
+
+          echo "Certificate file size: $(wc -c < /tmp/djcheck-cert.p12) bytes"
+          echo "Certificate file header (hex):" && xxd -l 16 /tmp/djcheck-cert.p12
+
+          # Validate it's a PKCS12 file with openssl
+          if openssl pkcs12 -info -in /tmp/djcheck-cert.p12 -passin "pass:${{ secrets.CSC_KEY_PASSWORD }}" -noout 2>/dev/null; then
+            echo "✅ Valid PKCS12 certificate"
             echo "CSC_LINK=/tmp/djcheck-cert.p12" >> $GITHUB_ENV
           else
-            echo "No CSC_LINK secret found, skipping signing"
-            echo "CSC_IDENTITY_AUTO_DISCOVERY=false" >> $GITHUB_ENV
+            echo "❌ Invalid PKCS12 format. Trying alternative decode methods..."
+            # Try without stripping newlines (some secrets have wrapping)
+            echo "$CSC_LINK_RAW" | tr -d '\n' | base64 --decode > /tmp/djcheck-cert.p12 2>/dev/null
+            if openssl pkcs12 -info -in /tmp/djcheck-cert.p12 -passin "pass:${{ secrets.CSC_KEY_PASSWORD }}" -noout 2>/dev/null; then
+              echo "✅ Valid PKCS12 after stripping newlines"
+              echo "CSC_LINK=/tmp/djcheck-cert.p12" >> $GITHUB_ENV
+            else
+              echo "❌ Could not parse certificate. Skipping code signing."
+              echo "CSC_IDENTITY_AUTO_DISCOVERY=false" >> $GITHUB_ENV
+              rm -f /tmp/djcheck-cert.p12
+            fi
           fi
 
       - name: Build & Package (${{ matrix.platform }})
