@@ -1,1 +1,0 @@
-var t={production:!0,siteUrl:"https://boothready.app",apiUrl:"https://api.boothready.app",internalApiUrl:"http://boothready-api:3000",wsUrl:"wss://api.boothready.app/ws",allowedHosts:["boothready.app"],analytics:{clarity:{enabled:!0,projectId:"vq29eyv1xg"},ga4:{enabled:!0,measurementId:"G-4P61MNBXE9"}}};export{t as a};
