@@ -49,6 +49,16 @@ jobs:
       - name: Build & Package (${{ matrix.platform }})
         run: npm run package:${{ matrix.platform }}
 
+      - name: Code sign macOS app (ad-hoc)
+        if: matrix.platform == 'mac'
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+        run: |
+          # Ad-hoc sign the app bundle to remove "damaged" error
+          codesign --force --deep --sign - "dist/mac/DJCheck.app"
+          # Re-package the signed app into a DMG
+          hdiutil create -volname "DJCheck" -srcfolder "dist/mac" -ov -format UDZO dist/DJCheck.dmg
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
