@@ -2,7 +2,6 @@ import { ipcMain, BrowserWindow } from 'electron'
 import { normalizeFile, DEFAULT_NORMALIZE_OPTIONS } from '../audio/normalizer'
 import type { NormalizeFilesPayload, NormalizeProgress, NormalizeResult as NormResult } from '../../shared/ipc-types'
 import { IPC_CHANNELS } from '../../shared/ipc-types'
-import * as path from 'path'
 
 let cancelRequested = false
 
@@ -79,6 +78,8 @@ export function registerNormalizeHandlers(): void {
     }
 
     win.webContents.send(IPC_CHANNELS.NORMALIZE_COMPLETE, { results })
+
+    return { success: true, results }
   })
 
   ipcMain.on(IPC_CHANNELS.CANCEL_NORMALIZE, () => {

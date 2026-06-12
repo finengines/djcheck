@@ -34,6 +34,8 @@ const store = new Store<AppSettings>({
     outputFolder: null,
     onboardingComplete: false,
     applyDither: true,
+    normalize: false,
+    normalizeTargetLufs: -14,
   },
 })
 

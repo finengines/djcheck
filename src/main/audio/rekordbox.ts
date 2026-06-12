@@ -113,7 +113,7 @@ export async function updateRekordboxXml(
 
   const collection = (updated as Record<string, Record<string, Record<string, unknown[]>>>)
     ?.DJ_PLAYLISTS?.COLLECTION?.TRACK ?? []
-  const trackArray: RekordboxTrack[] = Array.isArray(collection) ? collection : []
+  const trackArray: RekordboxTrack[] = Array.isArray(collection) ? collection as RekordboxTrack[] : []
 
   let updatedCount = 0
   const hotCueWarnings: string[] = []

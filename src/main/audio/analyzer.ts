@@ -517,7 +517,7 @@ export function parseMp3Header(buf: Buffer, len: number): Mp3HeaderInfo | null {
   const bitrate = (brTable[bitrateBits] ?? 0) * 1000
 
   // Calculate frame size for MPEG Layer 3
-  const frameSize = sampleRate > 0 && bitrate > 0
+  const _frameSize = sampleRate > 0 && bitrate > 0
     ? Math.floor(144 * bitrate / sampleRate) + padding
     : 0
 

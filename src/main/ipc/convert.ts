@@ -17,10 +17,10 @@ export function registerConvertHandlers(): void {
     cancelRequested = false
     const { tracks, options } = payload
     const conversions: Array<{ originalPath: string; outputPath: string }> = []
-    const results: Array<{ trackId: string; success: boolean; outputPath?: string; error?: string }> = []
+    const results: Array<{ trackId: string; success: boolean; outputPath?: string; error?: string; loudness?: { inputLufs: number; outputLufs: number; gainDb: number; inputTruePeak: number; inputLra: number; skipped: boolean } }> = []
 
     // Load rekordbox library if provided
-    let rekordboxLibrary = null
+    let rekordboxLibrary: import('../audio/rekordbox').RekordboxLibrary | null = null
     if (options.rekordboxXmlPath) {
       try {
         rekordboxLibrary = await parseRekordboxXml(options.rekordboxXmlPath)
@@ -171,6 +171,8 @@ export function registerConvertHandlers(): void {
     } else {
       win.webContents.send(IPC_CHANNELS.CONVERSION_COMPLETE, { results, rekordbox: null })
     }
+
+    return { success: true, results }
   })
 
   ipcMain.on(IPC_CHANNELS.CANCEL_CONVERSION, () => {
