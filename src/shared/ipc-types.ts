@@ -60,24 +60,44 @@ export interface ConversionResult {
 export interface ConversionProgress {
   trackId: string
   percent: number
-  stage: 'preparing' | 'converting' | 'writing-tags' | 'done'
+  stage: 'preparing' | 'measuring' | 'converting' | 'writing-tags' | 'done'
 }
 
 export type OutputFormat = 'aiff-24' | 'aiff-16' | 'wav-24' | 'wav-16' | 'mp3-320'
 
 /**
  * replace   — overwrite the original file in its source directory
- *             (same ext: literal overwrite; format change: new ext, original left alongside)
- * subfolder — create a "djcheck" subfolder inside each file's own directory
+ *             (same ext: literal overwrite; format change: new ext, original deleted)
+ * subfolder — create a named subfolder inside each file's own directory
  * folder    — save to a user-chosen folder, replicating the sub-tree when sourceRoot is set
+ * mirror    — create a sibling folder at the source root with the full tree replicated,
+ *             containing only converted files (ideal for Rekordbox playlist prep)
  */
-export type OutputMode = 'replace' | 'subfolder' | 'folder'
+export type OutputMode = 'replace' | 'subfolder' | 'folder' | 'mirror'
 
 export interface ConversionOptions {
   outputFormat: OutputFormat
   outputMode: OutputMode
   outputFolder?: string
   rekordboxXmlPath?: string
+  applyDither: boolean
+  /** Whether to apply loudness normalization after conversion */
+  normalize?: boolean
+  /** Target integrated loudness in LUFS (default: -14) */
+  normalizeTargetLufs?: number
+  /** Maximum true peak in dBTP (default: -1.0) */
+  normalizeTruePeak?: number
+}
+
+/** Options for standalone normalization (not part of conversion) */
+export interface StandaloneNormalizeOptions {
+  /** Target integrated loudness in LUFS. Default: -14 */
+  targetLufs: number
+  /** Maximum true peak in dBTP. Default: -1.0 */
+  truePeak: number
+  /** Output format for normalized files */
+  outputFormat: OutputFormat
+  /** Whether to apply dither */
   applyDither: boolean
 }
 
@@ -93,6 +113,12 @@ export const IPC_CHANNELS = {
   CONVERSION_PROGRESS: 'convert:progress',
   CONVERSION_RESULT: 'convert:result',
   CONVERSION_COMPLETE: 'convert:complete',
+
+  NORMALIZE_FILES: 'normalize:files',
+  CANCEL_NORMALIZE: 'normalize:cancel',
+  NORMALIZE_PROGRESS: 'normalize:progress',
+  NORMALIZE_RESULT: 'normalize:result',
+  NORMALIZE_COMPLETE: 'normalize:complete',
 
   PICK_OUTPUT_FOLDER: 'dialog:pick-output-folder',
   PICK_REKORDBOX_XML: 'dialog:pick-rekordbox-xml',
@@ -126,6 +152,8 @@ export interface AppSettings {
   outputFolder: string | null
   onboardingComplete: boolean
   applyDither: boolean
+  normalize: boolean
+  normalizeTargetLufs: number
 }
 
 export const MODEL_LABELS: Record<CDJModel, string> = {

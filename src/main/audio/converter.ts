@@ -102,6 +102,23 @@ export function buildOutputPath(
       }
       // Fallback if no folder chosen — use subfolder behaviour
       return path.join(dir, 'djcheck', `${base}.${outExt}`)
+
+    case 'mirror': {
+      // Create a sibling folder at the source root with the full tree replicated.
+      // e.g. /music/House/Deep/track.flac → /music/House converted/Deep/track.aiff
+      // The sibling folder name comes from outputFolder (default: "<rootName> converted")
+      if (!sourceRoot) {
+        // No scan root — fall back to subfolder behaviour
+        const folderName = options.outputFolder || 'converted'
+        return path.join(dir, folderName, `${base}.${outExt}`)
+      }
+      const rootName = path.basename(sourceRoot)
+      const parentDir = path.dirname(sourceRoot)
+      const mirrorName = options.outputFolder || `${rootName} converted`
+      const mirrorRoot = path.join(parentDir, mirrorName)
+      const relDir = path.relative(sourceRoot, dir)
+      return path.join(mirrorRoot, relDir, `${base}.${outExt}`)
+    }
   }
 }
 
@@ -312,8 +329,19 @@ export async function convertTrack(job: ConversionJob): Promise<string> {
     onProgress(5 + Math.floor(pct * 0.9), 'converting')
   })
 
+  // ─── Replace mode: swap old file for new ──────────────────────────────────
   if (sameFile) {
+    // Same extension overwrite — atomic rename of temp file
     await fs.rename(ffmpegTarget, outputPath)
+  } else if (options.outputMode === 'replace') {
+    // Format changed (e.g. .flac → .aiff): the converted file sits alongside
+    // the original. Delete the original so only the converted file remains.
+    try {
+      await fs.unlink(filePath)
+    } catch {
+      // If deletion fails (e.g. permissions), the converted file still exists
+      // but we don't want to block the whole conversion. Log and continue.
+    }
   }
 
   onProgress(98, 'writing-tags')

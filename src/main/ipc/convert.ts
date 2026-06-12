@@ -1,9 +1,11 @@
 import { ipcMain, BrowserWindow } from 'electron'
 import { convertTrack } from '../audio/converter'
 import { parseRekordboxXml, updateRekordboxXml } from '../audio/rekordbox'
+import { convertAndNormalize, DEFAULT_NORMALIZE_OPTIONS } from '../audio/normalizer'
 import type { ConvertTracksPayload, ConversionProgress } from '../../shared/ipc-types'
 import { IPC_CHANNELS } from '../../shared/ipc-types'
 import * as path from 'path'
+import * as fs from 'fs/promises'
 
 let cancelRequested = false
 
@@ -40,14 +42,73 @@ export function registerConvertHandlers(): void {
       }
 
       try {
-        const outputPath = await convertTrack({
-          trackId: track.trackId,
-          filePath: track.filePath,
-          issues: track.issues,
-          options,
-          sourceRoot: track.sourceRoot,
-          onProgress: sendProgress,
-        })
+        let outputPath: string
+
+        if (options.normalize) {
+          // ─── Convert + Normalize path ────────────────────────────────────
+          // Two-pass: measure loudness, then convert + apply linear gain
+          const { buildOutputPath, buildFfmpegArgs } = await import('../audio/converter')
+          const issueIds = new Set(track.issues.map(i => i.id))
+
+          outputPath = buildOutputPath(track.filePath, issueIds, options, track.sourceRoot)
+
+          // Ensure output directory exists
+          await fs.mkdir(path.dirname(outputPath), { recursive: true })
+
+          const { outputOptions, audioFilters } = buildFfmpegArgs(
+            track.filePath, issueIds, options.outputFormat, options.applyDither
+          )
+
+          // Determine if we need the atomic temp-file write for replace mode
+          const sameFile = path.resolve(outputPath) === path.resolve(track.filePath)
+          const ffmpegTarget = sameFile
+            ? path.join(path.dirname(outputPath), `.__djcheck_tmp_${path.basename(outputPath)}`)
+            : outputPath
+
+          const normOpts = {
+            ...DEFAULT_NORMALIZE_OPTIONS,
+            targetLufs: options.normalizeTargetLufs ?? DEFAULT_NORMALIZE_OPTIONS.targetLufs,
+            truePeak: options.normalizeTruePeak ?? DEFAULT_NORMALIZE_OPTIONS.truePeak,
+          }
+
+          sendProgress(0, 'measuring')
+
+          const result = await convertAndNormalize(
+            track.filePath,
+            ffmpegTarget,
+            audioFilters,
+            outputOptions,
+            normOpts,
+            (pct, stage) => {
+              if (stage === 'measuring') {
+                sendProgress(pct * 0.3, 'measuring')
+              } else {
+                sendProgress(30 + Math.floor(pct * 0.65), 'converting')
+              }
+            }
+          )
+
+          if (sameFile) {
+            await fs.rename(ffmpegTarget, outputPath)
+          }
+
+          // Replace mode: delete original if format changed
+          if (options.outputMode === 'replace' && !sameFile) {
+            try { await fs.unlink(track.filePath) } catch { /* ignore */ }
+          }
+
+          sendProgress(100, 'done')
+        } else {
+          // ─── Standard convert path (unchanged) ───────────────────────────
+          outputPath = await convertTrack({
+            trackId: track.trackId,
+            filePath: track.filePath,
+            issues: track.issues,
+            options,
+            sourceRoot: track.sourceRoot,
+            onProgress: sendProgress,
+          })
+        }
 
         conversions.push({ originalPath: track.filePath, outputPath })
         results.push({ trackId: track.trackId, success: true, outputPath })

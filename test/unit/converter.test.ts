@@ -78,6 +78,31 @@ describe('buildOutputPath', () => {
     }, '/music/house')
     expect(out).toBe('/output/deep/track.aiff')
   })
+
+  it('creates mirror sibling folder with full tree in mirror mode', () => {
+    const out = buildOutputPath('/music/house/deep/track.wav', new Set(['WAV_32BIT_FLOAT']), {
+      ...defaultOptions,
+      outputMode: 'mirror',
+    }, '/music/house')
+    expect(out).toBe('/music/house converted/deep/track.aiff')
+  })
+
+  it('uses custom mirror name when provided', () => {
+    const out = buildOutputPath('/music/house/deep/track.wav', new Set(['WAV_32BIT_FLOAT']), {
+      ...defaultOptions,
+      outputMode: 'mirror',
+      outputFolder: 'DJ Ready',
+    }, '/music/house')
+    expect(out).toBe('/music/DJ Ready/deep/track.aiff')
+  })
+
+  it('mirror mode falls back to subfolder when no sourceRoot', () => {
+    const out = buildOutputPath('/music/deep/track.wav', new Set(['WAV_32BIT_FLOAT']), {
+      ...defaultOptions,
+      outputMode: 'mirror',
+    })
+    expect(out).toBe('/music/deep/converted/track.aiff')
+  })
 })
 
 describe('buildFfmpegArgs — AIFF output', () => {

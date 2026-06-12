@@ -46,9 +46,12 @@ export default function ConversionModal({ trackIds, onClose }: Props) {
 
   const defaultName = deriveDefaultName(tracks, trackIds)
 
-  const [mode, setMode] = useState<OutputMode>('subfolder')
+  const [mode, setMode] = useState<OutputMode>('mirror')
   const [subfolderName, setSubfolderName] = useState(defaultName)
+  const [mirrorName, setMirrorName] = useState(`${defaultName} converted`)
   const [customFolder, setCustomFolder] = useState<string | null>(savedFolder)
+  const [normalize, setNormalize] = useState(false)
+  const [normalizeLufs, setNormalizeLufs] = useState(-14)
 
   // Reset name when modal opens
   useEffect(() => { setSubfolderName(defaultName) }, [defaultName])
@@ -67,6 +70,13 @@ export default function ConversionModal({ trackIds, onClose }: Props) {
       opts.outputFolder = subfolderName.trim() || defaultName
     } else if (mode === 'folder') {
       opts.outputFolder = customFolder ?? undefined
+    } else if (mode === 'mirror') {
+      opts.outputFolder = mirrorName.trim() || `${defaultName} converted`
+    }
+    if (normalize) {
+      opts.normalize = true
+      opts.normalizeTargetLufs = normalizeLufs
+      opts.normalizeTruePeak = -1.0
     }
     startConversion(trackIds, opts)
     onClose()
@@ -109,6 +119,45 @@ export default function ConversionModal({ trackIds, onClose }: Props) {
 
         {/* Mode options */}
         <div className="px-5 py-4 flex flex-col gap-2">
+
+          {/* Mirror — new sibling folder with full tree */}
+          <button
+            onClick={() => setMode('mirror')}
+            className="flex items-start gap-3 px-4 py-3 rounded-xl text-left transition-all"
+            style={{
+              background: mode === 'mirror' ? 'rgba(255,255,255,0.07)' : 'transparent',
+              boxShadow: mode === 'mirror' ? '0 0 0 1.5px rgba(255,255,255,0.15)' : '0 0 0 1px var(--border)',
+              border: 'none', cursor: 'pointer',
+            }}
+          >
+            <RadioDot active={mode === 'mirror'} />
+            <div className="flex-1 min-w-0">
+              <span className="text-sm font-medium text-white block mb-1">Mirror folder structure</span>
+              <span className="text-xs block mb-2.5" style={{ color: 'var(--muted)' }}>
+                Creates a sibling folder with the same directory tree — converted files only
+              </span>
+              <div
+                className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5"
+                style={{ background: 'var(--surface-2)' }}
+                onClick={e => e.stopPropagation()}
+              >
+                <span className="text-xs" style={{ color: 'var(--muted)', flexShrink: 0 }}>Folder name</span>
+                <input
+                  className="flex-1 text-xs bg-transparent outline-none text-white min-w-0"
+                  value={mirrorName}
+                  onChange={e => setMirrorName(e.target.value)}
+                  onFocus={() => setMode('mirror')}
+                  placeholder={`${defaultName} converted`}
+                  style={{ border: 'none' }}
+                />
+              </div>
+              {mode === 'mirror' && (
+                <p className="text-xs mt-1.5 opacity-60" style={{ color: 'var(--muted)' }}>
+                  e.g. <code style={{ fontSize: 10 }}>…/{mirrorName || `${defaultName} converted`}/Deep/track.aiff</code>
+                </p>
+              )}
+            </div>
+          </button>
 
           {/* Subfolder */}
           <button
@@ -201,6 +250,56 @@ export default function ConversionModal({ trackIds, onClose }: Props) {
               </span>
             </div>
           </button>
+        </div>
+
+        {/* Normalization */}
+        <div className="px-5 py-3" style={{ borderTop: '1px solid var(--border)' }}>
+          <button
+            onClick={() => setNormalize(!normalize)}
+            className="flex items-center gap-2 w-full text-left"
+            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+          >
+            <div
+              className="flex-shrink-0 w-4 h-4 rounded flex items-center justify-center"
+              style={{
+                border: `1.5px solid ${normalize ? 'var(--accent)' : 'rgba(255,255,255,0.3)'}`,
+                background: normalize ? 'var(--accent)' : 'transparent',
+                transition: 'all 0.15s',
+              }}
+            >
+              {normalize && (
+                <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                  <path d="M1 4L3.5 6.5L9 1" stroke="var(--bg)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              )}
+            </div>
+            <span className="text-sm font-medium text-white">Normalize loudness</span>
+          </button>
+          {normalize && (
+            <div className="mt-2.5 ml-6">
+              <p className="text-xs mb-2" style={{ color: 'var(--muted)' }}>
+                Applies linear gain adjustment to target consistent perceived loudness.
+                No limiting or compression — transients and dynamics are preserved.
+              </p>
+              <div
+                className="flex items-center gap-2 rounded-lg px-2.5 py-1.5"
+                style={{ background: 'var(--surface-2)' }}
+              >
+                <span className="text-xs" style={{ color: 'var(--muted)', flexShrink: 0 }}>Target</span>
+                <select
+                  value={normalizeLufs}
+                  onChange={e => setNormalizeLufs(Number(e.target.value))}
+                  className="text-xs bg-transparent outline-none text-white"
+                  style={{ border: 'none', cursor: 'pointer' }}
+                >
+                  <option value={-11} style={{ background: '#1a1a1a' }}>-11 LUFS (loud — club standard)</option>
+                  <option value={-14} style={{ background: '#1a1a1a' }}>-14 LUFS (balanced — Spotify/YouTube)</option>
+                  <option value={-16} style={{ background: '#1a1a1a' }}>-16 LUFS (conservative — Apple Music)</option>
+                  <option value={-18} style={{ background: '#1a1a1a' }}>-18 LUFS (quiet — dynamic music)</option>
+                </select>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Footer */}
