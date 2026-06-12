@@ -40,6 +40,12 @@ export interface TrackAnalysis {
   artworkFormat?: string | null
   /** The folder root this track was scanned from (for replicating folder tree in output) */
   sourceRoot?: string
+  /** Integrated loudness in LUFS (EBU R128), measured during analysis. null if not yet measured. */
+  lufs?: number | null
+  /** Loudness range in LU (EBU R128). null if not yet measured. */
+  lra?: number | null
+  /** True peak in dBTP. null if not yet measured. */
+  truePeakDb?: number | null
 }
 
 /** A file discovered during a folder scan */

@@ -132,6 +132,9 @@ const TrackRow = memo(function TrackRow({
             {track.fileSize > 0 && (
               <TechChip>{formatSize(track.fileSize)}</TechChip>
             )}
+            {track.lufs != null && (
+              <LoudnessChip lufs={track.lufs} truePeak={track.truePeakDb} />
+            )}
           </div>
         )}
       </div>
@@ -224,6 +227,35 @@ function TechChip({ children }: { children: React.ReactNode }) {
       style={{ color: 'var(--muted)', fontSize: 11, fontVariantNumeric: 'tabular-nums' }}
     >
       {children}
+    </span>
+  )
+}
+
+function LoudnessChip({ lufs, truePeak }: { lufs: number; truePeak?: number | null }) {
+  // Colour-code: quiet files (< -16 LUFS) get amber, loud files (> -8) get red,
+  // normal range gets the accent colour
+  let color = 'var(--accent)' // default: good range
+  let label = ''
+  if (lufs < -18) {
+    color = '#f59e0b' // amber — very quiet
+    label = 'quiet'
+  } else if (lufs < -14) {
+    color = '#fbbf24' // yellow — slightly quiet
+    label = ''
+  } else if (lufs > -6) {
+    color = '#ef4444' // red — very loud
+    label = 'loud'
+  }
+
+  const lufsStr = `${lufs >= 0 ? '+' : ''}${lufs.toFixed(1)}`
+
+  return (
+    <span
+      className="text-xs"
+      style={{ color, fontSize: 11, fontVariantNumeric: 'tabular-nums' }}
+      title={truePeak != null ? `${lufsStr} LUFS | ${truePeak.toFixed(1)} dBTP${label ? ` (${label})` : ''}` : `${lufsStr} LUFS${label ? ` (${label})` : ''}`}
+    >
+      {lufsStr} LUFS
     </span>
   )
 }

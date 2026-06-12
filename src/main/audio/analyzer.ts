@@ -1,6 +1,7 @@
 import * as fs from 'fs/promises'
 import * as path from 'path'
 import type { TrackAnalysis, AudioIssue, CDJModel, AudioFormat, IssueSeverity } from '../../shared/ipc-types'
+import { measureLoudness } from './normalizer'
 
 // CDJ model capability matrix
 export interface ModelCaps {
@@ -850,10 +851,24 @@ export async function analyzeFile(
       false, false))
   }
 
+  // Measure loudness (EBU R128) — non-blocking, failures just mean no LUFS data
+  let lufs: number | null = null
+  let lra: number | null = null
+  let truePeakDb: number | null = null
+  try {
+    const loudness = await measureLoudness(filePath, { targetLufs: -14, truePeak: -1, lra: 20, applyDither: false })
+    lufs = loudness.inputI
+    lra = loudness.inputLra
+    truePeakDb = loudness.inputTp
+  } catch {
+    // Loudness measurement is optional — don't block analysis if ffmpeg fails
+  }
+
   return buildResult(
     trackId, filePath, fileName, fileSize, format,
     sampleRate, bitDepth, channels, bitrate, duration, codec,
-    issues, 'done', hasArtwork, artworkFormat
+    issues, 'done', hasArtwork, artworkFormat,
+    lufs, lra, truePeakDb
   )
 }
 
@@ -872,11 +887,15 @@ function buildResult(
   issues: AudioIssue[],
   status: TrackAnalysis['status'],
   hasArtwork = false,
-  artworkFormat: string | null = null
+  artworkFormat: string | null = null,
+  lufs: number | null = null,
+  lra: number | null = null,
+  truePeakDb: number | null = null
 ): TrackAnalysis {
   return {
     id, filePath, fileName, fileSize, format,
     sampleRate, bitDepth, channels, bitrate, duration, codec,
     issues, status, hasArtwork, artworkFormat,
+    lufs, lra, truePeakDb,
   }
 }
