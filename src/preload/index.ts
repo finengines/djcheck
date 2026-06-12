@@ -57,6 +57,28 @@ const api = {
     return () => ipcRenderer.removeListener(IPC_CHANNELS.CONVERSION_COMPLETE, cb)
   },
 
+  // ─── Standalone Normalization ─────────────────────────────────────────────
+  normalizeFiles: (payload: import('../shared/ipc-types').NormalizeFilesPayload): void => {
+    ipcRenderer.invoke(IPC_CHANNELS.NORMALIZE_FILES, payload)
+  },
+  cancelNormalize: (): void => {
+    ipcRenderer.send(IPC_CHANNELS.CANCEL_NORMALIZE)
+  },
+  onNormalizeProgress: (cb: (progress: import('../shared/ipc-types').NormalizeProgress) => void): Unsubscribe => {
+    const handler = (_: Electron.IpcRendererEvent, p: import('../shared/ipc-types').NormalizeProgress): void => cb(p)
+    ipcRenderer.on(IPC_CHANNELS.NORMALIZE_PROGRESS, handler)
+    return () => ipcRenderer.removeListener(IPC_CHANNELS.NORMALIZE_PROGRESS, handler)
+  },
+  onNormalizeResult: (cb: (result: import('../shared/ipc-types').NormalizeResult) => void): Unsubscribe => {
+    const handler = (_: Electron.IpcRendererEvent, r: import('../shared/ipc-types').NormalizeResult): void => cb(r)
+    ipcRenderer.on(IPC_CHANNELS.NORMALIZE_RESULT, handler)
+    return () => ipcRenderer.removeListener(IPC_CHANNELS.NORMALIZE_RESULT, handler)
+  },
+  onNormalizeComplete: (cb: (payload: unknown) => void): Unsubscribe => {
+    ipcRenderer.once(IPC_CHANNELS.NORMALIZE_COMPLETE, (_e, p) => cb(p))
+    return () => ipcRenderer.removeListener(IPC_CHANNELS.NORMALIZE_COMPLETE, cb)
+  },
+
   // ─── Dialogs ─────────────────────────────────────────────────────────────────
   pickOutputFolder: (): Promise<string | null> =>
     ipcRenderer.invoke(IPC_CHANNELS.PICK_OUTPUT_FOLDER),

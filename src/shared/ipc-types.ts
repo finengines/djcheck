@@ -55,6 +55,21 @@ export interface ConversionResult {
   outputPath?: string
   error?: string
   warnings?: string[]
+  /** Loudness data — only present when normalization was enabled */
+  loudness?: {
+    /** Input integrated loudness (LUFS) — measured before processing */
+    inputLufs: number
+    /** Output integrated loudness (LUFS) — measured after processing (approx = target) */
+    outputLufs: number
+    /** Gain applied in dB (positive = louder, negative = quieter) */
+    gainDb: number
+    /** Input true peak (dBTP) */
+    inputTruePeak: number
+    /** Input loudness range (LU) */
+    inputLra: number
+    /** Whether normalization was skipped (file already at target ±0.5 dB) */
+    skipped: boolean
+  }
 }
 
 export interface ConversionProgress {
@@ -99,6 +114,32 @@ export interface StandaloneNormalizeOptions {
   outputFormat: OutputFormat
   /** Whether to apply dither */
   applyDither: boolean
+}
+
+export interface NormalizeFilesPayload {
+  files: Array<{ filePath: string; sourceRoot?: string }>
+  options: StandaloneNormalizeOptions
+}
+
+export interface NormalizeProgress {
+  filePath: string
+  percent: number
+  stage: 'measuring' | 'normalizing' | 'done'
+}
+
+export interface NormalizeResult {
+  filePath: string
+  success: boolean
+  outputPath?: string
+  error?: string
+  loudness?: {
+    inputLufs: number
+    outputLufs: number
+    gainDb: number
+    inputTruePeak: number
+    inputLra: number
+    skipped: boolean
+  }
 }
 
 export const IPC_CHANNELS = {

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useStore, useFilteredTracks, useTrackStats } from '../store'
 import type { FilterMode } from '../store'
 import ConversionModal from './ConversionModal'
+import NormalizeModal from './NormalizeModal'
 
 const FILTERS: { id: FilterMode; label: string }[] = [
   { id: 'all',       label: 'All' },
@@ -23,6 +24,7 @@ export default function Toolbar() {
   const stats = useTrackStats()
 
   const [modalTrackIds, setModalTrackIds] = useState<string[] | null>(null)
+  const [normalizePaths, setNormalizePaths] = useState<string[] | null>(null)
 
   const openModalForSelected = () => {
     const ids = [...selectedIds].filter(id => {
@@ -124,6 +126,20 @@ export default function Toolbar() {
             <button onClick={deselectAll} className="btn btn-ghost text-xs" style={{ height: 28 }}>
               Deselect
             </button>
+            <button
+              onClick={() => {
+                const paths = [...selectedIds]
+                  .map(id => tracks.get(id))
+                  .filter(Boolean)
+                  .map(t => t!.filePath)
+                if (paths.length > 0) setNormalizePaths(paths)
+              }}
+              disabled={conversionRunning}
+              className="btn btn-ghost text-xs"
+              style={{ height: 28 }}
+            >
+              🔊 Normalize
+            </button>
             {selectedWithIssues > 0 && (
               <button
                 onClick={openModalForSelected}
@@ -152,6 +168,21 @@ export default function Toolbar() {
                 </button>
               </>
             )}
+            {stats.total > 0 && (
+              <button
+                onClick={() => {
+                  const paths = [...tracks.values()]
+                    .filter(t => t.status === 'done')
+                    .map(t => t.filePath)
+                  if (paths.length > 0) setNormalizePaths(paths)
+                }}
+                disabled={conversionRunning || analysisRunning}
+                className="btn btn-ghost text-xs"
+                style={{ height: 28 }}
+              >
+                🔊 Normalize all
+              </button>
+            )}
             <button onClick={clearTracks} className="btn btn-ghost text-xs" style={{ height: 28 }}>
               Clear
             </button>
@@ -177,6 +208,14 @@ export default function Toolbar() {
         <ConversionModal
           trackIds={modalTrackIds}
           onClose={() => setModalTrackIds(null)}
+        />
+      )}
+
+      {/* Normalize modal */}
+      {normalizePaths && (
+        <NormalizeModal
+          filePaths={normalizePaths}
+          onClose={() => setNormalizePaths(null)}
         />
       )}
     </>

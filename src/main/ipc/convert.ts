@@ -73,7 +73,7 @@ export function registerConvertHandlers(): void {
 
           sendProgress(0, 'measuring')
 
-          const result = await convertAndNormalize(
+          const normResult = await convertAndNormalize(
             track.filePath,
             ffmpegTarget,
             audioFilters,
@@ -98,6 +98,21 @@ export function registerConvertHandlers(): void {
           }
 
           sendProgress(100, 'done')
+
+          conversions.push({ originalPath: track.filePath, outputPath })
+          results.push({
+            trackId: track.trackId,
+            success: true,
+            outputPath,
+            loudness: {
+              inputLufs: normResult.measurement.inputI,
+              outputLufs: normResult.measurement.inputI + normResult.gainDb,
+              gainDb: normResult.gainDb,
+              inputTruePeak: normResult.measurement.inputTp,
+              inputLra: normResult.measurement.inputLra,
+              skipped: Math.abs(normResult.gainDb) < 0.5,
+            },
+          })
         } else {
           // ─── Standard convert path (unchanged) ───────────────────────────
           outputPath = await convertTrack({
@@ -108,14 +123,16 @@ export function registerConvertHandlers(): void {
             sourceRoot: track.sourceRoot,
             onProgress: sendProgress,
           })
+
+          conversions.push({ originalPath: track.filePath, outputPath })
+          results.push({ trackId: track.trackId, success: true, outputPath })
         }
 
-        conversions.push({ originalPath: track.filePath, outputPath })
-        results.push({ trackId: track.trackId, success: true, outputPath })
         win.webContents.send(IPC_CHANNELS.CONVERSION_RESULT, {
           trackId: track.trackId,
           success: true,
           outputPath,
+          loudness: results[results.length - 1]?.loudness,
         })
       } catch (err) {
         const error = err instanceof Error ? err.message : String(err)

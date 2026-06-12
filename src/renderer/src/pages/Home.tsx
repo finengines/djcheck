@@ -7,6 +7,7 @@ import TrackList from '../components/TrackList'
 import DropZone from '../components/DropZone'
 import ConversionProgress from '../components/ConversionProgress'
 import ConversionSummary from '../components/ConversionSummary'
+import NormalizeSummary from '../components/NormalizeSummary'
 import EmptyState from '../components/EmptyState'
 
 export default function Home() {
@@ -18,6 +19,7 @@ export default function Home() {
     startAnalysis,
     conversionRunning,
     conversionComplete,
+    normalizeComplete,
   } = useStore()
 
   const hasTracks = tracks.size > 0
@@ -111,6 +113,7 @@ export default function Home() {
 
           {conversionRunning && <ConversionProgress />}
           {conversionComplete && !conversionRunning && <ConversionSummary />}
+          {normalizeComplete && <NormalizeSummary />}
         </div>
       </div>
     </div>

@@ -278,8 +278,13 @@ export default function ConversionModal({ trackIds, onClose }: Props) {
           {normalize && (
             <div className="mt-2.5 ml-6">
               <p className="text-xs mb-2" style={{ color: 'var(--muted)' }}>
-                Applies linear gain adjustment to target consistent perceived loudness.
-                No limiting or compression — transients and dynamics are preserved.
+                Two-pass EBU R128 analysis measures each file's loudness, then applies
+                a single constant gain to reach the target. No limiting or compression —
+                transients and dynamics are fully preserved.
+              </p>
+              <p className="text-xs mb-2" style={{ color: 'var(--muted)' }}>
+                After conversion, you'll see a detailed loudness report showing
+                before/after LUFS and the exact gain applied to each track.
               </p>
               <div
                 className="flex items-center gap-2 rounded-lg px-2.5 py-1.5"

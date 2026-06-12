@@ -3,6 +3,7 @@ import { join } from 'path'
 import { runPreflight } from './setup/preflight'
 import { registerAnalyzeHandlers } from './ipc/analyze'
 import { registerConvertHandlers } from './ipc/convert'
+import { registerNormalizeHandlers } from './ipc/normalize'
 import { registerDialogHandlers, store } from './ipc/dialogs'
 import { IPC_CHANNELS } from '../shared/ipc-types'
 
@@ -199,6 +200,7 @@ app.whenReady().then(async () => {
   // Register all IPC handlers before creating the window
   registerAnalyzeHandlers()
   registerConvertHandlers()
+  registerNormalizeHandlers()
   registerDialogHandlers()
 
   createWindow()

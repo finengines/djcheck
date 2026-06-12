@@ -17,7 +17,9 @@ export type { OutputMode }
 export type FilterMode = 'all' | 'issues' | 'clean' | 'converted'
 
 export interface ConversionCompletePayload {
-  results: Array<{ trackId: string; success: boolean; outputPath?: string; error?: string }>
+  results: Array<{ trackId: string; success: boolean; outputPath?: string; error?: string; loudness?: {
+    inputLufs: number; outputLufs: number; gainDb: number; inputTruePeak: number; inputLra: number; skipped: boolean
+  } }>
   rekordbox: {
     updatedCount: number
     outputXmlPath: string | null
@@ -68,9 +70,23 @@ interface AppState {
   startConversion: (trackIds: string[], optionsOverride?: Partial<ConversionOptions>) => void
   cancelConversion: () => void
   updateConversionProgress: (progress: ConversionProgress) => void
-  handleConversionResult: (result: { trackId: string; success: boolean; outputPath?: string; error?: string }) => void
+  handleConversionResult: (result: { trackId: string; success: boolean; outputPath?: string; error?: string; loudness?: {
+    inputLufs: number; outputLufs: number; gainDb: number; inputTruePeak: number; inputLra: number; skipped: boolean
+  } }) => void
   handleConversionComplete: (payload: ConversionCompletePayload) => void
   dismissConversionResult: () => void
+
+  // Standalone Normalization
+  normalizeRunning: boolean
+  normalizeProgress: Map<string, import('@shared/ipc-types').NormalizeProgress>
+  normalizeComplete: { results: import('@shared/ipc-types').NormalizeResult[] } | null
+
+  startNormalization: (files: Array<{ filePath: string }>, options: import('@shared/ipc-types').StandaloneNormalizeOptions) => void
+  cancelNormalization: () => void
+  updateNormalizeProgress: (progress: import('@shared/ipc-types').NormalizeProgress) => void
+  handleNormalizeResult: (result: import('@shared/ipc-types').NormalizeResult) => void
+  handleNormalizeComplete: (payload: { results: import('@shared/ipc-types').NormalizeResult[] }) => void
+  dismissNormalizeResult: () => void
 
   // Output / Rekordbox
   outputFolder: string | null
@@ -292,6 +308,60 @@ export const useStore = create<AppState>()(
 
     dismissConversionResult: () => {
       set(state => { state.conversionComplete = null })
+    },
+
+    // ─── Standalone Normalization ────────────────────────────────────────────
+    normalizeRunning: false,
+    normalizeProgress: new Map(),
+    normalizeComplete: null,
+
+    startNormalization: (files, options) => {
+      set(s => {
+        s.normalizeRunning = true
+        s.normalizeProgress = new Map()
+        s.normalizeComplete = null
+      })
+
+      const unsubs: Array<() => void> = []
+
+      unsubs.push(window.djcheck.onNormalizeProgress((progress) => {
+        get().updateNormalizeProgress(progress)
+      }))
+
+      unsubs.push(window.djcheck.onNormalizeResult((result) => {
+        get().handleNormalizeResult(result)
+      }))
+
+      unsubs.push(window.djcheck.onNormalizeComplete((payload) => {
+        get().handleNormalizeComplete(payload as { results: import('@shared/ipc-types').NormalizeResult[] })
+        unsubs.forEach(u => u())
+      }))
+
+      window.djcheck.normalizeFiles({ files, options })
+    },
+
+    cancelNormalization: () => {
+      window.djcheck.cancelNormalize()
+      set(state => { state.normalizeRunning = false })
+    },
+
+    updateNormalizeProgress: (progress) => {
+      set(state => { state.normalizeProgress.set(progress.filePath, progress) })
+    },
+
+    handleNormalizeResult: (_result) => {
+      // Individual results collected in normalizeComplete
+    },
+
+    handleNormalizeComplete: (payload) => {
+      set(state => {
+        state.normalizeRunning = false
+        state.normalizeComplete = payload
+      })
+    },
+
+    dismissNormalizeResult: () => {
+      set(state => { state.normalizeComplete = null })
     },
 
     // ─── Output / Rekordbox ───────────────────────────────────────────────────

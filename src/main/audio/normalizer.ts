@@ -59,7 +59,7 @@ export interface NormalizeResult {
 
 // ─── Pass 1: Measure loudness ──────────────────────────────────────────────
 
-async function measureLoudness(
+export async function measureLoudness(
   inputPath: string,
   options: NormalizeOptions
 ): Promise<LoudnessMeasurement> {
