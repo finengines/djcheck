@@ -719,7 +719,8 @@ export function checkGeneral(
 export async function analyzeFile(
   filePath: string,
   targetModel: CDJModel,
-  trackId: string
+  trackId: string,
+  measureLoudnessFlag: boolean = false
 ): Promise<TrackAnalysis> {
   const caps = MODEL_CAPS[targetModel]
   const fileName = path.basename(filePath)
@@ -851,17 +852,19 @@ export async function analyzeFile(
       false, false))
   }
 
-  // Measure loudness (EBU R128) — non-blocking, failures just mean no LUFS data
+  // Measure loudness (EBU R128) — optional, only when requested
   let lufs: number | null = null
   let lra: number | null = null
   let truePeakDb: number | null = null
-  try {
-    const loudness = await measureLoudness(filePath, { targetLufs: -14, truePeak: -1, lra: 20, applyDither: false })
-    lufs = loudness.inputI
-    lra = loudness.inputLra
-    truePeakDb = loudness.inputTp
-  } catch {
-    // Loudness measurement is optional — don't block analysis if ffmpeg fails
+  if (measureLoudnessFlag) {
+    try {
+      const loudness = await measureLoudness(filePath, { targetLufs: -14, truePeak: -1, lra: 20, applyDither: false })
+      lufs = loudness.inputI
+      lra = loudness.inputLra
+      truePeakDb = loudness.inputTp
+    } catch {
+      // Loudness measurement is optional — don't block analysis if ffmpeg fails
+    }
   }
 
   return buildResult(

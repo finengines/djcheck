@@ -184,6 +184,7 @@ export const IPC_CHANNELS = {
 export interface AnalyzeFilesPayload {
   files: Array<{ filePath: string; sourceRoot?: string }>
   targetModel: CDJModel
+  measureLoudness?: boolean
 }
 
 export interface ConvertTracksPayload {

@@ -266,6 +266,7 @@ export async function runFfmpeg(
 
   return new Promise((resolve, reject) => {
     let cmd = Ffmpeg(inputPath)
+    cmd = cmd.outputOption('-threads', '0')
 
     if (audioFilters.length > 0) {
       cmd = cmd.audioFilters(audioFilters)

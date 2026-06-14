@@ -72,6 +72,7 @@ export async function measureLoudness(
 
   const { stderr } = await execFileAsync(ffmpegPath, [
     '-hide_banner',
+    '-threads', '0',
     '-i', inputPath,
     '-af', filter,
     '-f', 'null',
@@ -121,6 +122,7 @@ async function applyNormalization(
 
   return new Promise((resolve, reject) => {
     let cmd = Ffmpeg(inputPath).audioFilters(filter)
+    cmd = cmd.outputOption('-threads', '0')
 
     // Add codec/format args
     for (const opt of outputCodecArgs) {
@@ -329,6 +331,7 @@ export async function convertAndNormalize(
 
   return new Promise((resolve, reject) => {
     let cmd = Ffmpeg(inputPath)
+    cmd = cmd.outputOption('-threads', '0')
 
     if (allFilters.length > 0) {
       cmd = cmd.audioFilters(allFilters)

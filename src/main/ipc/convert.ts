@@ -9,6 +9,19 @@ import * as fs from 'fs/promises'
 
 let cancelRequested = false
 
+const MAX_CONCURRENT = 2
+
+function throttledSender(win: BrowserWindow, channel: string, minIntervalMs = 100) {
+  let lastSent = 0
+  return (data: any) => {
+    const now = Date.now()
+    if (now - lastSent >= minIntervalMs) {
+      lastSent = now
+      win.webContents.send(channel, data)
+    }
+  }
+}
+
 export function registerConvertHandlers(): void {
   ipcMain.handle(IPC_CHANNELS.CONVERT_TRACKS, async (event, payload: ConvertTracksPayload) => {
     const win = BrowserWindow.fromWebContents(event.sender)
@@ -33,12 +46,17 @@ export function registerConvertHandlers(): void {
       }
     }
 
-    for (const track of tracks) {
-      if (cancelRequested) break
+    const sendProgress = throttledSender(win, IPC_CHANNELS.CONVERSION_PROGRESS)
+    const queue = [...tracks]
+    const active = new Set<Promise<void>>()
 
-      const sendProgress = (percent: number, stage: ConversionProgress['stage']): void => {
+    const runOne = async (): Promise<void> => {
+      if (queue.length === 0 || cancelRequested) return
+      const track = queue.shift()!
+
+      const throttledProgress = (percent: number, stage: ConversionProgress['stage']): void => {
         const progress: ConversionProgress = { trackId: track.trackId, percent, stage }
-        win.webContents.send(IPC_CHANNELS.CONVERSION_PROGRESS, progress)
+        sendProgress(progress)
       }
 
       try {
@@ -71,7 +89,7 @@ export function registerConvertHandlers(): void {
             truePeak: options.normalizeTruePeak ?? DEFAULT_NORMALIZE_OPTIONS.truePeak,
           }
 
-          sendProgress(0, 'measuring')
+          throttledProgress(0, 'measuring')
 
           const normResult = await convertAndNormalize(
             track.filePath,
@@ -81,9 +99,9 @@ export function registerConvertHandlers(): void {
             normOpts,
             (pct, stage) => {
               if (stage === 'measuring') {
-                sendProgress(pct * 0.3, 'measuring')
+                throttledProgress(pct * 0.3, 'measuring')
               } else {
-                sendProgress(30 + Math.floor(pct * 0.65), 'converting')
+                throttledProgress(30 + Math.floor(pct * 0.65), 'converting')
               }
             }
           )
@@ -97,7 +115,7 @@ export function registerConvertHandlers(): void {
             try { await fs.unlink(track.filePath) } catch { /* ignore */ }
           }
 
-          sendProgress(100, 'done')
+          throttledProgress(100, 'done')
 
           conversions.push({ originalPath: track.filePath, outputPath })
           results.push({
@@ -121,13 +139,14 @@ export function registerConvertHandlers(): void {
             issues: track.issues,
             options,
             sourceRoot: track.sourceRoot,
-            onProgress: sendProgress,
+            onProgress: throttledProgress,
           })
 
           conversions.push({ originalPath: track.filePath, outputPath })
           results.push({ trackId: track.trackId, success: true, outputPath })
         }
 
+        // Always send results immediately (not throttled)
         win.webContents.send(IPC_CHANNELS.CONVERSION_RESULT, {
           trackId: track.trackId,
           success: true,
@@ -137,6 +156,7 @@ export function registerConvertHandlers(): void {
       } catch (err) {
         const error = err instanceof Error ? err.message : String(err)
         results.push({ trackId: track.trackId, success: false, error })
+        // Always send errors immediately (not throttled)
         win.webContents.send(IPC_CHANNELS.CONVERSION_RESULT, {
           trackId: track.trackId,
           success: false,
@@ -145,7 +165,18 @@ export function registerConvertHandlers(): void {
       }
     }
 
-    // Update rekordbox XML if provided
+    // Queue-based pool pattern for concurrent processing
+    while (queue.length > 0 && !cancelRequested) {
+      while (active.size < MAX_CONCURRENT && queue.length > 0 && !cancelRequested) {
+        const p = runOne().finally(() => active.delete(p as Promise<void>))
+        active.add(p)
+      }
+      if (active.size > 0) await Promise.race(active)
+    }
+
+    await Promise.all(active)
+
+    // Update rekordbox XML if provided (after ALL conversions complete)
     if (rekordboxLibrary && conversions.length > 0 && options.rekordboxXmlPath) {
       const xmlDir = path.dirname(options.rekordboxXmlPath)
       const outputXmlPath = path.join(xmlDir, 'rekordbox_djcheck.xml')
@@ -153,6 +184,7 @@ export function registerConvertHandlers(): void {
         const { updatedCount, hotCueWarnings } = await updateRekordboxXml(
           rekordboxLibrary, conversions, outputXmlPath
         )
+        // Always send complete immediately (not throttled)
         win.webContents.send(IPC_CHANNELS.CONVERSION_COMPLETE, {
           results,
           rekordbox: { updatedCount, outputXmlPath, hotCueWarnings },

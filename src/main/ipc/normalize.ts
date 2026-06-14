@@ -5,6 +5,19 @@ import { IPC_CHANNELS } from '../../shared/ipc-types'
 
 let cancelRequested = false
 
+const MAX_CONCURRENT = 2
+
+function throttledSender(win: BrowserWindow, channel: string, minIntervalMs = 100) {
+  let lastSent = 0
+  return (data: any) => {
+    const now = Date.now()
+    if (now - lastSent >= minIntervalMs) {
+      lastSent = now
+      win.webContents.send(channel, data)
+    }
+  }
+}
+
 export function registerNormalizeHandlers(): void {
   ipcMain.handle(IPC_CHANNELS.NORMALIZE_FILES, async (event, payload: NormalizeFilesPayload) => {
     const win = BrowserWindow.fromWebContents(event.sender)
@@ -13,12 +26,16 @@ export function registerNormalizeHandlers(): void {
     cancelRequested = false
     const { files, options } = payload
     const results: NormResult[] = []
+    const sendProgress = throttledSender(win, IPC_CHANNELS.NORMALIZE_PROGRESS)
+    const queue = [...files]
+    const active = new Set<Promise<void>>()
 
-    for (const file of files) {
-      if (cancelRequested) break
+    const runOne = async (): Promise<void> => {
+      if (queue.length === 0 || cancelRequested) return
+      const file = queue.shift()!
 
-      const sendProgress = (percent: number, stage: NormalizeProgress['stage']): void => {
-        win.webContents.send(IPC_CHANNELS.NORMALIZE_PROGRESS, {
+      const throttledProgress = (percent: number, stage: NormalizeProgress['stage']): void => {
+        sendProgress({
           filePath: file.filePath,
           percent,
           stage,
@@ -35,7 +52,7 @@ export function registerNormalizeHandlers(): void {
         }
 
         const result = await normalizeFile(file.filePath, normOpts, (pct, stage) => {
-          sendProgress(pct, stage)
+          throttledProgress(pct, stage)
         })
 
         const loudness = result.skipped
@@ -64,6 +81,7 @@ export function registerNormalizeHandlers(): void {
         }
 
         results.push(normResult)
+        // Always send results immediately (not throttled)
         win.webContents.send(IPC_CHANNELS.NORMALIZE_RESULT, normResult)
       } catch (err) {
         const error = err instanceof Error ? err.message : String(err)
@@ -73,10 +91,23 @@ export function registerNormalizeHandlers(): void {
           error,
         }
         results.push(normResult)
+        // Always send errors immediately (not throttled)
         win.webContents.send(IPC_CHANNELS.NORMALIZE_RESULT, normResult)
       }
     }
 
+    // Queue-based pool pattern for concurrent processing
+    while (queue.length > 0 && !cancelRequested) {
+      while (active.size < MAX_CONCURRENT && queue.length > 0 && !cancelRequested) {
+        const p = runOne().finally(() => active.delete(p as Promise<void>))
+        active.add(p)
+      }
+      if (active.size > 0) await Promise.race(active)
+    }
+
+    await Promise.all(active)
+
+    // Always send complete immediately (not throttled)
     win.webContents.send(IPC_CHANNELS.NORMALIZE_COMPLETE, { results })
 
     return { success: true, results }

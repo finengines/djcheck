@@ -25,6 +25,7 @@ function createWindow(): void {
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: false,
+      backgroundThrottling: false,
     },
   })
 
@@ -191,6 +192,11 @@ function buildMenu(): void {
 
   const menu = Menu.buildFromTemplate(template)
   Menu.setApplicationMenu(menu)
+}
+
+// Hardware acceleration for macOS
+if (process.platform === 'darwin') {
+  app.commandLine.appendSwitch('enable-gpu-rasterization')
 }
 
 app.whenReady().then(async () => {
