@@ -74,6 +74,7 @@ jobs:
           path: |
             dist/*.AppImage
             dist/*.dmg
+            dist/*.zip
             dist/*.exe
           if-no-files-found: warn
 
@@ -92,7 +93,7 @@ jobs:
       - name: Prepare release assets
         run: |
           mkdir -p release
-          find artifacts -type f \( -name "*.AppImage" -o -name "*.dmg" -o -name "*.exe" \) -exec cp {} release/ \;
+          find artifacts -type f \( -name "*.AppImage" -o -name "*.dmg" -o -name "*.zip" -o -name "*.exe" \) -exec cp {} release/ \;
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
