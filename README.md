@@ -255,8 +255,6 @@ Contributions are welcome! Please:
 
 ## Star History
 
-## Star History
-
 <a href="https://www.star-history.com/?type=date&repos=finengines%2Fdjcheck">
  <picture>
    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=finengines/djcheck&type=date&theme=dark&legend=top-left&sealed_token=4HyvyUSUdeNs7T_wgxhPDkwwKt5WYyihMfi-iVLCqSXNxWZuUohf8mpTApyLXgyPI9ydmVmyN-KMV9ZkEz9qu6L3UlWFlhBPMBVfAjwNXT8uRMsYkXMk-Q" />
