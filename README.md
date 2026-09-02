@@ -91,7 +91,7 @@ DJCheck performs the following checks on your audio files:
 
 ### Download
 
-Download the latest release from the [Releases](https://github.com/finengines/djcheck/releases) page.
+Get the latest release from the official site, [djcheck.fin.audio](https://djcheck.fin.audio/), or the [GitHub Releases](https://github.com/finengines/djcheck/releases) page.
 
 - **macOS**: Download the `.dmg` file. Drag DJCheck to Applications.
 - **Windows**: Download the `.exe` installer.
