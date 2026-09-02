@@ -255,7 +255,15 @@ Contributions are welcome! Please:
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=finengines/djcheck&type=Date)](https://star-history.com/#finengines/djcheck&Date)
+## Star History
+
+<a href="https://www.star-history.com/?type=date&repos=finengines%2Fdjcheck">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=finengines/djcheck&type=date&theme=dark&legend=top-left&sealed_token=4HyvyUSUdeNs7T_wgxhPDkwwKt5WYyihMfi-iVLCqSXNxWZuUohf8mpTApyLXgyPI9ydmVmyN-KMV9ZkEz9qu6L3UlWFlhBPMBVfAjwNXT8uRMsYkXMk-Q" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=finengines/djcheck&type=date&legend=top-left&sealed_token=4HyvyUSUdeNs7T_wgxhPDkwwKt5WYyihMfi-iVLCqSXNxWZuUohf8mpTApyLXgyPI9ydmVmyN-KMV9ZkEz9qu6L3UlWFlhBPMBVfAjwNXT8uRMsYkXMk-Q" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=finengines/djcheck&type=date&legend=top-left&sealed_token=4HyvyUSUdeNs7T_wgxhPDkwwKt5WYyihMfi-iVLCqSXNxWZuUohf8mpTApyLXgyPI9ydmVmyN-KMV9ZkEz9qu6L3UlWFlhBPMBVfAjwNXT8uRMsYkXMk-Q" />
+ </picture>
+</a>
 
 ## License
 
