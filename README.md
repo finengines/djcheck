@@ -1,6 +1,20 @@
-# DJCheck
+<div align="center">
 
-**Scan your music library for Pioneer CDJ compatibility issues — and fix them automatically.**
+<a href="https://djcheck.fin.audio/"><img src="build/icon.png" alt="DJCheck" width="160"></a>
+
+<h1>DJCheck</h1>
+
+<p><strong>Scan your music library for Pioneer CDJ compatibility issues — and fix them automatically.</strong></p>
+
+<p>
+<a href="https://github.com/finengines/djcheck/releases"><img src="https://img.shields.io/github/v/release/finengines/djcheck?include_prereleases&style=flat-square" alt="GitHub release"></a>
+<a href="https://aur.archlinux.org/packages/djcheck-appimage"><img src="https://img.shields.io/aur/version/djcheck-appimage?style=flat-square&label=AUR" alt="AUR version"></a>
+<a href="https://github.com/finengines/djcheck/stargazers"><img src="https://img.shields.io/github/stars/finengines/djcheck?style=flat-square&color=ffd43b" alt="GitHub stars"></a>
+<img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-555555?style=flat-square" alt="Platforms">
+<a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="MIT license"></a>
+</p>
+
+</div>
 
 DJCheck is a desktop app that analyses your audio files (WAV, AIFF, MP3, FLAC, AAC) and checks whether they'll play correctly on Pioneer CDJ players. It detects a wide range of compatibility issues and can auto-fix them with one click — no re-encoding required for many common problems.
 
@@ -238,6 +252,10 @@ Contributions are welcome! Please:
 3. Use existing error codes (E-8302, E-8304, E-8305, E-8306, WARNING, UNSUPPORTED)
 4. Add unit tests in `test/unit/analyzer.test.ts`
 5. If auto-fixable, add conversion logic to `src/main/audio/converter.ts`
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=finengines/djcheck&type=Date)](https://star-history.com/#finengines/djcheck&Date)
 
 ## License
 
