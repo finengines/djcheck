@@ -97,6 +97,18 @@ Download the latest release from the [Releases](https://github.com/finengines/dj
 - **Windows**: Download the `.exe` installer.
 - **Linux**: Download the `.AppImage` file. Make it executable: `chmod +x DJCheck-*.AppImage`
 
+> **Platform note:** I've only personally tested the macOS builds so far. The Windows and Linux builds should work, but haven't been tested by me — feedback (and contributions!) on those platforms are very welcome.
+
+### Arch Linux (AUR)
+
+Thanks to [@slowbro](https://github.com/slowbro), DJCheck is also packaged on the AUR:
+
+```bash
+paru -S djcheck-appimage  # or your preferred AUR helper
+```
+
+See the [`djcheck-appimage`](https://aur.archlinux.org/packages/djcheck-appimage) package page for details.
+
 ### Prerequisites
 
 - **ffmpeg**: Required for audio conversion. DJCheck includes ffmpeg-static, so no separate installation is needed.
