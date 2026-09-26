@@ -168,7 +168,7 @@ function buildCodecArgs(
       if (applyDither) args.push('-af dither=method=triangular')
       break
     case 'mp3-320':
-      args.push('-acodec libmp3lame', '-b:a 320k', '-q:a 0', '-id3v2_version 3', '-write_id3v1 1')
+      args.push('-acodec libmp3lame', '-b:a 320k', '-id3v2_version 3', '-write_id3v1 1') // no -q:a: silently overrides -b:a → VBR (see converter.ts)
       break
   }
 

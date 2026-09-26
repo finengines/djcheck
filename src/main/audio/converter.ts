@@ -189,7 +189,8 @@ export function buildFfmpegArgs(
   } else if (outExt === 'mp3') {
     outputOptions.push('-acodec libmp3lame')
     outputOptions.push('-b:a 320k')
-    outputOptions.push('-q:a 0')
+    // ponytail: no -q:a here — it silently overrides -b:a and switches lame to
+    // VBR ~150-250kbps (heard as swishy/warbly artifacts on electronic music)
     outputOptions.push('-id3v2_version 3') // ID3v2.3 for widest CDJ compatibility
     outputOptions.push('-write_id3v1 1')
   }
