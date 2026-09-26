@@ -6,10 +6,14 @@ import type { ConvertTracksPayload, ConversionProgress } from '../../shared/ipc-
 import { IPC_CHANNELS } from '../../shared/ipc-types'
 import * as path from 'path'
 import * as fs from 'fs/promises'
+import * as os from 'os'
 
 let cancelRequested = false
 
-const MAX_CONCURRENT = 2
+// ponytail: fixed 2 left most cores idle (lame encode is single-threaded per file);
+// cap 8 so external-drive I/O and 18GB unified RAM don't thrash. Raise cap if batch
+// jobs on internal SSD still leave cores idle.
+const MAX_CONCURRENT = Math.max(2, Math.min(8, os.cpus().length - 2))
 
 function throttledSender(win: BrowserWindow, channel: string, minIntervalMs = 100) {
   let lastSent = 0

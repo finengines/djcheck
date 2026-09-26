@@ -2,10 +2,12 @@ import { ipcMain, BrowserWindow } from 'electron'
 import { normalizeFile, DEFAULT_NORMALIZE_OPTIONS } from '../audio/normalizer'
 import type { NormalizeFilesPayload, NormalizeProgress, NormalizeResult as NormResult } from '../../shared/ipc-types'
 import { IPC_CHANNELS } from '../../shared/ipc-types'
+import * as os from 'os'
 
 let cancelRequested = false
 
-const MAX_CONCURRENT = 2
+// ponytail: same rationale as convert.ts — lame/loudnorm are single-threaded per file
+const MAX_CONCURRENT = Math.max(2, Math.min(8, os.cpus().length - 2))
 
 function throttledSender(win: BrowserWindow, channel: string, minIntervalMs = 100) {
   let lastSent = 0
